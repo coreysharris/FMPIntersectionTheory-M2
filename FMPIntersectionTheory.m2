@@ -42,7 +42,7 @@ projectiveScheme Ideal :=  opts -> I -> (
 	R := ring I;
 	eqs := flatten entries gens I;
 	P := if opts.Base =!= null then (
-			N := #(flatten entries vars R) - 1;  -- dimension of projective space corresponding to proj(R)
+			N = #(flatten entries vars R) - 1;  -- dimension of projective space corresponding to proj(R)
 			projectiveBundle(N, opts.Base)
 		) else if opts.SuperScheme =!= null then (
 			I = trim (I + opts.SuperScheme.ideal);
@@ -50,7 +50,7 @@ projectiveScheme Ideal :=  opts -> I -> (
 		) else if opts.AmbientSpace =!= null then (
 			opts.AmbientSpace
 		) else (
-			N := #(flatten entries vars R) - 1;  -- dimension of projective space corresponding to proj(R)
+			N = #(flatten entries vars R) - 1;  -- dimension of projective space corresponding to proj(R)
 			projectiveBundle N
 		);
 
@@ -60,12 +60,33 @@ projectiveScheme Ideal :=  opts -> I -> (
 		global equations => eqs,
 		global ambientSpace => P,
 		global intersectionRing => intersectionRing(P),
-		global hyperplane => ( chern_1 (OO_P(1)) ),
+		global hyperplane => ( chern_1 (OO_P(1)) ), -- the class of a hyperplane in ambientSpace
 		global dim => null,
 		global degree => null,
 		global codim => null,
 		global cycleClass => null
 	}
+)
+
+
+-- cycleClass X will return the class of X in the chow group of the ambient projective space
+-- The multiplicity of X along the irreducible component Z is the multiplicity of X at a point
+-- z in Z.  This is also the degree of the projectivized tangent cone to z in X, 
+-- which can be calculated via the Hilbert polynomial of graded ring associated to O(X)/I, 
+-- where I is the ideal of .
+cycleClass = method()
+cycleClass ProjectiveScheme := X -> (
+	if X.cycleClass === null then (
+		mPrimes := minimalPrimes X.ideal;  -- irreducible components of X
+		X.cycleClass = sum apply (mPrimes, irrComp -> (
+			-- the 
+			hilb = hilbertPolynomial ( tangentCone (sub(irrComp, X.coordRing)) );
+			d = dim hilb; -- dimension of the associated scheme to i
+			m = (hilb#d); -- its geometric multiplicity in X
+			m * (X.hyperplane)^(dim(X.ambientSpace)-d)
+		))
+	);
+	X.cycleClass
 )
 
 beginDocumentation()
@@ -102,6 +123,22 @@ multidoc ///
 
 TEST ///
 R = QQ[x,y,z];
-X = ideal("x2y,yz-x2");
+X = ideal("x2,xy");
 assert ( class(projectiveScheme(X)) === ProjectiveScheme )
+assert ( cycleClass(X) === Y.hyperplane ) -- a line with embedded point is rationally equivalent to a line in PP^2
+
+
 ///
+
+
+
+
+
+
+
+
+
+
+
+
+
