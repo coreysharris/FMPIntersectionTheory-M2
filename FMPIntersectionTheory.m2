@@ -78,7 +78,7 @@ multidoc ///
 			A package for Fulton-MacPherson intersection theory.
 		Description
 			Text
-				{\em FMPIntersectionTheory} extends @ TO Schubert2@ and (eventually) implements the intersection product of Fulton-Macpherson.
+				{\em FMPIntersectionTheory} (eventually) implements the intersection product of Fulton-Macpherson.
 	Node
 		Key
 			(projectiveScheme,Ideal)
