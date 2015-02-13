@@ -51,7 +51,7 @@ projectiveScheme Ideal :=  opts -> I -> (
 			N = #(flatten entries vars R) - 1;  -- dimension of projective space corresponding to proj(R)
 			projectiveBundle(N, opts.Base)
 		) else if opts.SuperScheme =!= null then (
-			I = trim (I + opts.SuperScheme.ideal);
+			I = trim (I + opts.SuperScheme.Ideal);
 			opts.SuperScheme.AmbientSpace
 		) else if opts.AmbientSpace =!= null then (
 			opts.AmbientSpace
@@ -257,9 +257,16 @@ multidoc ///
 TEST ///
 R = QQ[x,y,z];
 I = ideal("x2,xy");
-X = projectiveScheme(I);
+I' = ideal("x,y2");
+X = projectiveScheme(I); -- X is a line with embedded point
+X' = projectiveScheme(I'); -- X' is a double point
 assert ( class(X) === ProjectiveScheme )
-assert ( cycleClass(X) === Y.hyperplane ) -- a line with embedded point is rationally equivalent to a line in PP^2
+assert ( cycleClass(X) === X.Hyperplane ) -- X is rationally equivalent to a line in PP^2
+assert ( degree(X) == 1 ) -- [line + pt] . [H] = [pt]
+assert ( dim(X) == 1 )
+
+assert ( cycleClass(X') === (X'.Hyperplane)^2 ) -- [X'] = [X'_red] = [pt]
+assert ( degree(X') == 2 ) -- double point has degree 2
 
 ///
 
