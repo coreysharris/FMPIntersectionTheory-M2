@@ -10,7 +10,12 @@ newPackage(
 needsPackage("Schubert2")
 
 -- export { "segreClass" }
-export { "ProjectiveScheme", "projectiveScheme", "Base", "SuperScheme", "AmbientSpace", "ambientSpace", "cycleClass", "coordRing", "equations", "hyperplane"}
+export { "ProjectiveScheme", "projectiveScheme", "BaseForAmbient", "SuperScheme", "AmbientSpace", 
+		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane"}
+
+protect Equations
+protect CoordinateRing
+protect Hyperplane
 
 hasAttribute = value Core#"private dictionary"#"hasAttribute"
 getAttribute = value Core#"private dictionary"#"getAttribute"
@@ -26,11 +31,11 @@ toString ProjectiveScheme := net ProjectiveScheme := X -> (
 	else "a projective scheme")
 ProjectiveScheme#{Standard,AfterPrint} = X -> (
 	<< concatenate(interpreterDepth:"o") << lineNumber << " : "
-	<< "a projective scheme in PP^" << dim(X.ambientSpace) << " defined by " << X.ideal << endl;
+	<< "a projective scheme in PP^" << dim(X.AmbientSpace) << " defined by " << X.Ideal << endl;
 )
 
 projectiveScheme = method(TypicalValue => ProjectiveScheme, Options => {
-		Base => null,  -- sets the ambient space to be a projective bundle over Base
+		BaseForAmbient => null,  -- sets the ambient space to be a projective bundle over Base
 		SuperScheme => null,  -- a ProjectiveScheme containing the one we are defining
 							  -- If I is the ideal of SuperScheme in R, and we define our 
 							  -- new scheme with J in R, we instead will use I+J
@@ -40,13 +45,14 @@ projectiveScheme = method(TypicalValue => ProjectiveScheme, Options => {
 projectiveScheme Ideal :=  opts -> I -> (
 	-- I := if opts.LinearBase then homogenate(I') else I';
 	R := ring I;
+	N := 0;
 	eqs := flatten entries gens I;
-	P := if opts.Base =!= null then (
+	P := if opts.BaseForAmbient =!= null then (
 			N = #(flatten entries vars R) - 1;  -- dimension of projective space corresponding to proj(R)
 			projectiveBundle(N, opts.Base)
 		) else if opts.SuperScheme =!= null then (
 			I = trim (I + opts.SuperScheme.ideal);
-			opts.SuperScheme.ambientSpace
+			opts.SuperScheme.AmbientSpace
 		) else if opts.AmbientSpace =!= null then (
 			opts.AmbientSpace
 		) else (
@@ -55,16 +61,16 @@ projectiveScheme Ideal :=  opts -> I -> (
 		);
 
 	new ProjectiveScheme from {
-		global ideal => I,
-		global coordRing => quotient I,
-		global equations => eqs,
-		global ambientSpace => P,
-		global intersectionRing => intersectionRing(P),
-		global hyperplane => ( chern_1 (OO_P(1)) ), -- the class of a hyperplane in ambientSpace
+		global Ideal => I,
+		CoordinateRing => quotient I,
+		Equations => eqs,
+		AmbientSpace => P,
+		IntersectionRing => intersectionRing(P),
+		Hyperplane => ( chern_1 (OO_P(1)) ), -- the class of a hyperplane in ambientSpace
 		global dim => null,
 		global degree => null,
 		global codim => null,
-		global cycleClass => null
+		CycleClass => null
 	}
 )
 
@@ -76,49 +82,123 @@ projectiveScheme Ideal :=  opts -> I -> (
 -- where I is the ideal of .
 cycleClass = method()
 cycleClass ProjectiveScheme := X -> (
-	if X.cycleClass === null then (
-		mPrimes := minimalPrimes X.ideal;  -- irreducible components of X
-		X.cycleClass = sum apply (mPrimes, irrComp -> (
+	if X.CycleClass === null then (
+		mPrimes := minimalPrimes X.Ideal;  -- irreducible components of X
+		X.CycleClass = sum apply (mPrimes, irrComp -> (
 			-- the 
-			hilb = hilbertPolynomial ( tangentCone (sub(irrComp, X.coordRing)) );
-			d = dim hilb; -- dimension of the associated scheme to i
-			m = (hilb#d); -- its geometric multiplicity in X
-			m * (X.hyperplane)^(dim(X.ambientSpace)-d)
+			hilb := hilbertPolynomial ( tangentCone (sub(irrComp, X.CoordinateRing)) );
+			d := dim hilb; -- dimension of the associated scheme to i
+			m := (hilb#d); -- its geometric multiplicity in X
+			m * (X.Hyperplane)^(dim(X.AmbientSpace)-d)
 		))
 	);
-	X.cycleClass
+	X.CycleClass
 )
 
 beginDocumentation()
+undocumented {
+	(net,ProjectiveScheme),
+	(toString,ProjectiveScheme)
+}
 
 multidoc ///
-	Node
-		Key
-	  		FMPIntersectionTheory
-		Headline
-			A package for Fulton-MacPherson intersection theory.
-		Description
-			Text
-				{\em FMPIntersectionTheory} (eventually) implements the intersection product of Fulton-Macpherson.
-	Node
-		Key
-			(projectiveScheme,Ideal)
-	   		projectiveScheme
-		Headline
-			an extension of AbstractVariety which comes with an embedding to a projective space
-		Usage
-			projectiveScheme I
-		Inputs
-			I:Ideal
-		Outputs
-			:ProjectiveScheme
-		Description
-			Text
-				Here we show an example.
-			Example
-				R = QQ[x,y]
-				I = ideal x^2
-				projectiveScheme(I)
+Node
+	Key
+  		FMPIntersectionTheory
+	Headline
+		A package for Fulton-MacPherson intersection theory.
+	Description
+		Text
+			{\em FMPIntersectionTheory} (eventually) implements the intersection product of Fulton-Macpherson.
+------
+Node
+	Key
+		ProjectiveScheme
+	Headline
+		the class of projective schemes
+	Description
+		Text
+			a projective scheme in this package is an ideal along with information about how it is embedded in projective space
+------
+Node
+	Key
+		(projectiveScheme,Ideal)
+   		projectiveScheme
+   		[projectiveScheme,BaseForAmbient]
+   		BaseForAmbient
+   		[projectiveScheme,AmbientSpace]
+   		AmbientSpace
+   		[projectiveScheme,SuperScheme]
+   		SuperScheme
+	Headline
+		make a projective scheme
+	Usage
+		projectiveScheme I
+	Inputs
+		I:Ideal
+	Outputs
+		:ProjectiveScheme
+	Description
+		Text
+			Here we show an example.
+		Example
+			R = QQ[x,y];
+			I = ideal x^2;
+			projectiveScheme(I)
+------
+Node
+	Key
+		(cycleClass,ProjectiveScheme)
+		cycleClass
+	Headline
+		gives the class [X] in A_*(PP^n) of a ProjectiveScheme X
+	Usage
+		cycleClass X
+	Inputs
+		X:ProjectiveScheme
+	Outputs
+		: 
+			the class of X in the Chow ring of the ambient projective space
+	Description
+		Text
+			cycleClass X will return the class of X in the chow group of the ambient projective space
+			The multiplicity of X along the irreducible component Z is the multiplicity of X at a point z in Z.  This is also the degree of the projectivized tangent cone to z in X, which can be calculated via the Hilbert polynomial of graded ring associated to O(X)/I, where I is the ideal of Z.
+		Example
+			R = QQ[x,y,z];
+			I = ideal x*y;
+			cycleClass(projectiveScheme(I))
+Node
+	Key
+		CycleClass
+	Headline
+		a symbol used internally as a key
+	SeeAlso
+		cycleClass
+------
+Node
+	Key
+		CoordinateRing
+	Headline
+		a symbol used internally as a key
+------
+Node
+	Key
+		AmbientSpace
+	Headline
+		a symbol used internally as a key
+------
+Node
+	Key
+		Hyperplane
+	Headline
+		a symbol used internally as a key
+------
+Node
+	Key
+		Equations
+	Headline
+		a symbol used internally as a key
+------
 ///
 
 TEST ///
@@ -126,7 +206,6 @@ R = QQ[x,y,z];
 X = ideal("x2,xy");
 assert ( class(projectiveScheme(X)) === ProjectiveScheme )
 assert ( cycleClass(X) === Y.hyperplane ) -- a line with embedded point is rationally equivalent to a line in PP^2
-
 
 ///
 
