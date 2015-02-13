@@ -95,6 +95,20 @@ cycleClass ProjectiveScheme := X -> (
 	X.CycleClass
 )
 
+degree ProjectiveScheme := X -> (
+	if X.degree === null then (
+		X.degree = degree(X.Ideal)
+	);
+	X.degree
+)
+
+dim ProjectiveScheme := X -> (
+	if X.dim === null then (
+		X.dim = dim(variety(X.Ideal))
+	);
+	X.dim
+)
+
 beginDocumentation()
 undocumented {
 	(net,ProjectiveScheme),
@@ -102,109 +116,149 @@ undocumented {
 }
 
 multidoc ///
-Node
-	Key
-  		FMPIntersectionTheory
-	Headline
-		A package for Fulton-MacPherson intersection theory.
-	Description
-		Text
-			{\em FMPIntersectionTheory} (eventually) implements the intersection product of Fulton-Macpherson.
-------
-Node
-	Key
-		ProjectiveScheme
-	Headline
-		the class of projective schemes
-	Description
-		Text
-			a projective scheme in this package is an ideal along with information about how it is embedded in projective space
-------
-Node
-	Key
-		(projectiveScheme,Ideal)
-   		projectiveScheme
-   		[projectiveScheme,BaseForAmbient]
-   		BaseForAmbient
-   		[projectiveScheme,AmbientSpace]
-   		AmbientSpace
-   		[projectiveScheme,SuperScheme]
-   		SuperScheme
-	Headline
-		make a projective scheme
-	Usage
-		projectiveScheme I
-	Inputs
-		I:Ideal
-	Outputs
-		:ProjectiveScheme
-	Description
-		Text
-			Here we show an example.
-		Example
-			R = QQ[x,y];
-			I = ideal x^2;
-			projectiveScheme(I)
-------
-Node
-	Key
-		(cycleClass,ProjectiveScheme)
-		cycleClass
-	Headline
-		gives the class [X] in A_*(PP^n) of a ProjectiveScheme X
-	Usage
-		cycleClass X
-	Inputs
-		X:ProjectiveScheme
-	Outputs
-		: 
-			the class of X in the Chow ring of the ambient projective space
-	Description
-		Text
-			cycleClass X will return the class of X in the chow group of the ambient projective space
-			The multiplicity of X along the irreducible component Z is the multiplicity of X at a point z in Z.  This is also the degree of the projectivized tangent cone to z in X, which can be calculated via the Hilbert polynomial of graded ring associated to O(X)/I, where I is the ideal of Z.
-		Example
-			R = QQ[x,y,z];
-			I = ideal x*y;
-			cycleClass(projectiveScheme(I))
-Node
-	Key
-		CycleClass
-	Headline
-		a symbol used internally as a key
-	SeeAlso
-		cycleClass
-------
-Node
-	Key
-		CoordinateRing
-	Headline
-		a symbol used internally as a key
-------
-Node
-	Key
-		AmbientSpace
-	Headline
-		a symbol used internally as a key
-------
-Node
-	Key
-		Hyperplane
-	Headline
-		a symbol used internally as a key
-------
-Node
-	Key
-		Equations
-	Headline
-		a symbol used internally as a key
-------
+	Node
+		Key
+	  		FMPIntersectionTheory
+		Headline
+			A package for Fulton-MacPherson intersection theory.
+		Description
+			Text
+				{\em FMPIntersectionTheory} (eventually) implements the intersection product of Fulton-Macpherson.
+	------
+	Node
+		Key
+			ProjectiveScheme
+		Headline
+			the class of projective schemes
+		Description
+			Text
+				a projective scheme in this package is an ideal along with information about how it is embedded in projective space
+	------
+	Node
+		Key
+			(projectiveScheme,Ideal)
+	   		projectiveScheme
+	   		[projectiveScheme,BaseForAmbient]
+	   		BaseForAmbient
+	   		[projectiveScheme,AmbientSpace]
+	   		AmbientSpace
+	   		[projectiveScheme,SuperScheme]
+	   		SuperScheme
+		Headline
+			make a projective scheme
+		Usage
+			projectiveScheme I
+		Inputs
+			I:Ideal
+		Outputs
+			:ProjectiveScheme
+		Description
+			Text
+				Here we show an example.
+			Example
+				R = QQ[x,y];
+				I = ideal x^2;
+				projectiveScheme(I)
+	------
+	Node
+		Key
+			(cycleClass,ProjectiveScheme)
+			cycleClass
+		Headline
+			gives the class in the chow group of the ambient projective space
+		Usage
+			cycleClass X
+		Inputs
+			X:ProjectiveScheme
+		Outputs
+			: 
+				the class of X in the Chow ring of the ambient projective space
+		Description
+			Text
+				cycleClass X will return the class of X in the chow group of the ambient projective space
+				The multiplicity of X along the irreducible component Z is the multiplicity of X at a point z in Z.  This is also the degree of the projectivized tangent cone to z in X, which can be calculated via the Hilbert polynomial of graded ring associated to O(X)/I, where I is the ideal of Z.
+			Example
+				R = QQ[x,y,z];
+				I = ideal x*y;
+				cycleClass(projectiveScheme(I))
+			Example
+				I' = ideal("x2,xy");
+				cycleClass(projectiveScheme(I'))
+	Node
+		Key
+			CycleClass
+		Headline
+			a symbol used internally as a key
+		SeeAlso
+			cycleClass
+	------
+	Node
+		Key
+			(degree,ProjectiveScheme)
+		Headline
+			gives the degree of a ProjectiveScheme
+		Usage
+			degree X
+		Inputs
+			X:ProjectiveScheme
+		Outputs
+			:ZZ
+		Description
+			Example
+				R = QQ[x,y,z];
+				I = ideal x*y;
+				X = projectiveScheme(I);
+				degree X
+	------
+	Node
+		Key
+			(dim,ProjectiveScheme)
+		Headline
+			gives the dim of a ProjectiveScheme
+		Usage
+			dim X
+		Inputs
+			X:ProjectiveScheme
+		Outputs
+			:ZZ
+		Description
+			Example
+				R = QQ[x,y,z];
+				I = ideal x*y;
+				X = projectiveScheme(I);
+				dim X
+	------
+	Node
+		Key
+			CoordinateRing
+		Headline
+			a symbol used internally as a key
+	------
+	Node
+		Key
+			AmbientSpace
+		Headline
+			a symbol used internally as a key
+	------
+	Node
+		Key
+			Hyperplane
+		Headline
+			a symbol used internally as a key
+	------
+	Node
+		Key
+			Equations
+		Headline
+			a symbol used internally as a key
+	------
 ///
 
 TEST ///
 R = QQ[x,y,z];
-X = ideal("x2,xy");
-assert ( class(projectiveScheme(X)) === ProjectiveScheme )
+I = ideal("x2,xy");
+X = projectiveScheme(I);
+assert ( class(X) === ProjectiveScheme )
 assert ( cycleClass(X) === Y.hyperplane ) -- a line with embedded point is rationally equivalent to a line in PP^2
 
 ///
