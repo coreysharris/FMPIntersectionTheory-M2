@@ -40,10 +40,10 @@ projectiveScheme = method(TypicalValue => ProjectiveScheme, Options => {
 							  -- If I is the ideal of SuperScheme in R, and we define our 
 							  -- new scheme with J in R, we instead will use I+J
 		AmbientSpace => null, -- the projective space where we will be computing
-		-- LinearBase => false   -- 
+		MakeBaseOfLinearSystem => false   -- if true, the ideal used to define the projective scheme should be made to have all terms of same degree
 	})
-projectiveScheme Ideal :=  opts -> I -> (
-	-- I := if opts.LinearBase then homogenate(I') else I';
+projectiveScheme Ideal :=  opts -> I' -> (
+	I := if opts.MakeBaseOfLinearSystem then homogenate(I') else I';
 	R := ring I;
 	N := 0;
 	eqs := flatten entries gens I;
@@ -108,6 +108,97 @@ dim ProjectiveScheme := X -> (
 	);
 	X.dim
 )
+
+-----------------------------------------------------------------------------
+-- commutative algebra helper functions
+-----------------------------------------------------------------------------
+
+-- test whether all generators of I have the same degree
+homogenated := I -> (
+	-- get a list of degrees of the generators of I
+	gns := flatten entries gens I;
+	degs := apply(gns, g -> (degree g)#0);
+	-- take the max of the list
+	maxDeg := max(degs);
+	-- test whether all degrees attain the max
+	return all(degs, d -> d == maxDeg);
+)
+
+
+homogenate := I -> (
+	-- no need to do all this work if the generators are already of same degree
+	if (homogenated I) then return I;
+
+	-- get list of generators	
+	gns := flatten entries gens I;
+	-- take max of the list
+	maxDeg := max(apply(gns, g -> (degree g)#0));
+
+	-- split the list into sublists by degree
+	-- e.g. { z, xy2, x2y, x3+y3 } -> { {}, {z}, {}, {xy2, x2y}, {x3+y3}  }
+	gLists := for i from 0 to maxDeg list (
+		-- select makes a list of generators of degree i
+		select(gns, g -> (degree g)#0 == i)
+	);
+
+	J := ideal ( vars ring I ); 
+
+	gs := for i to ( (length gLists)-1) list (
+		-- the ith list in gLists is the set of degree i generators
+		-- so multiply these by J^(maxDeg-i) to get generators of degree maxDeg
+		flatten entries mingens (
+			J^(maxDeg - i) * sub(ideal(gLists#i), ring I)
+	    ) 
+	);
+	return trim ideal (flatten gs)
+)
+
+
+goodHyperplaneSection := (X,Y) -> (
+	ds := distinguished ( sub(X.Ideal, Y.coordRing) );
+	while (true) do (
+		h := random(1, ring(Y.Ideal));
+		found = true;
+		-- choose a random hyperplane section of Y
+		-- test to see if it contains any distinguished varieties of X
+		-- if so, start over
+		for d in ds do (
+			if isSubset(ideal h, d) then (
+				found = false;
+				break;
+			)
+		)
+		if found then return h
+	)
+)
+
+
+segreClass = method(TypicalValue => RingElement)
+segreClass(Ideal,Ideal) := (iX,iY) -> (
+	Y := projectiveScheme( iY, Base => base(a_0..a_(dim variety (iX+iY))) );
+	X := projectiveScheme( homogenate iX, SuperScheme => Y );
+	H := X.Hyperplane;
+
+	-- s = a_0 PP^0 + a_1 PP^1 + .. + a_N PP^N
+	-- this will become the class s(X,Y)
+	s := sum ( for i in 0..N list (a_i * H^(N-i)) );
+
+	eqns := while ( dim X >= 0 )
+		list (
+			d := first degree ( (X.Ideal)_0 ) -- degree of the first generator of X.Ideal
+			D := ( d^(dim Y) * degree(Y) ) - degpr(X,Y); -- LHS of the contribution formula
+			C := coefficient( H^(dim X), (1 + d*H)^(dim Y) * s );
+			(apply (a_0..a_N, v -> coefficient(v,C)), D))
+		)
+		do (
+			hyp = goodHyperplaneSection(X,Y);
+			-- replace X,Y with hyperplane sections
+			Y = projectiveScheme(Y.Ideal + hyp);
+			X = projectiveScheme(X.Ideal, SuperScheme => Y, MakeBaseOfLinearSystem => true)
+		);
+)
+
+-----------------------------------------------------------------------------
 
 beginDocumentation()
 undocumented {
