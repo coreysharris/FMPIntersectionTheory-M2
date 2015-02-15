@@ -3,15 +3,16 @@ newPackage(
 	Version => "0.1",
 	Date => "February 9, 2015",
 	Authors => {{Name => "Corey Harris", Email => "charris@math.fsu.edu", HomePage => "http://coreyharris.name"}},
-	Headline => "A package for Fulton-MacPherson intersection theory."
+	Headline => "A package for Fulton-MacPherson intersection theory.",
+	AuxiliaryFiles => true
 	-- PackageExports => {"Shubert2"}
 )
 
 needsPackage("Schubert2")
 
 -- export { "segreClass" }
-export { "ProjectiveScheme", "projectiveScheme", "BaseForAmbient", "SuperScheme", "AmbientSpace", 
-		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane"}
+export { "ProjectiveScheme", "projectiveScheme", "BaseForAmbient", "SuperScheme", "AmbientSpace", "MakeBaseOfLinearSystem",
+		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane", "segreClass"}
 
 protect Equations
 protect CoordinateRing
@@ -21,6 +22,44 @@ hasAttribute = value Core#"private dictionary"#"hasAttribute"
 getAttribute = value Core#"private dictionary"#"getAttribute"
 ReverseDictionary = value Core#"private dictionary"#"ReverseDictionary"
 -- indexSymbols = value Core#"private dictionary"#"indexSymbols"
+
+-- test whether all generators of I have the same degree
+homogenated := I -> (
+	-- get a list of degrees of the generators of I and take the max
+	gns := flatten entries gens I;
+	degs := apply(gns, g -> (degree g)#0);
+	maxDeg := max(degs);
+
+	-- test whether all degrees attain the max
+	return all(degs, d -> d == maxDeg);
+)
+
+-- make all generators of X have the same degree
+homogenate := I -> (
+	-- no need to do all this work if the generators are already of same degree
+	if (homogenated I) then return I;
+
+	-- get list of generators and take max degree
+	gns := flatten entries gens I;
+	maxDeg := max(apply(gns, g -> (degree g)#0));
+
+	-- split the list into sublists by degree
+	-- e.g. { z, xy2, x2y, x3+y3 } -> { {}, {z}, {}, {xy2, x2y}, {x3+y3}  }
+	gLists := for i from 0 to maxDeg list (
+		select(gns, g -> (degree g)#0 == i)
+	);
+
+	J := ideal ( vars ring I ); 
+
+	gs := for i to ( (length gLists)-1) list (
+		-- the ith list in gLists is the set of degree i generators
+		flatten entries mingens (
+			J^(maxDeg - i) * sub(ideal(gLists#i), ring I)
+	    ) 
+	);
+	return trim ideal (flatten gs);
+)
+
 
 ProjectiveScheme = new Type of MutableHashTable
 globalAssignment ProjectiveScheme
@@ -49,7 +88,7 @@ projectiveScheme Ideal :=  opts -> I' -> (
 	eqs := flatten entries gens I;
 	P := if opts.BaseForAmbient =!= null then (
 			N = #(flatten entries vars R) - 1;  -- dimension of projective space corresponding to proj(R)
-			projectiveBundle(N, opts.Base)
+			projectiveBundle(N, opts.BaseForAmbient)
 		) else if opts.SuperScheme =!= null then (
 			I = trim (I + opts.SuperScheme.Ideal);
 			opts.SuperScheme.AmbientSpace
@@ -110,55 +149,20 @@ dim ProjectiveScheme := X -> (
 )
 
 -----------------------------------------------------------------------------
--- commutative algebra helper functions
+
 -----------------------------------------------------------------------------
 
--- test whether all generators of I have the same degree
-homogenated := I -> (
-	-- get a list of degrees of the generators of I
-	gns := flatten entries gens I;
-	degs := apply(gns, g -> (degree g)#0);
-	-- take the max of the list
-	maxDeg := max(degs);
-	-- test whether all degrees attain the max
-	return all(degs, d -> d == maxDeg);
-)
 
 
-homogenate := I -> (
-	-- no need to do all this work if the generators are already of same degree
-	if (homogenated I) then return I;
-
-	-- get list of generators	
-	gns := flatten entries gens I;
-	-- take max of the list
-	maxDeg := max(apply(gns, g -> (degree g)#0));
-
-	-- split the list into sublists by degree
-	-- e.g. { z, xy2, x2y, x3+y3 } -> { {}, {z}, {}, {xy2, x2y}, {x3+y3}  }
-	gLists := for i from 0 to maxDeg list (
-		-- select makes a list of generators of degree i
-		select(gns, g -> (degree g)#0 == i)
-	);
-
-	J := ideal ( vars ring I ); 
-
-	gs := for i to ( (length gLists)-1) list (
-		-- the ith list in gLists is the set of degree i generators
-		-- so multiply these by J^(maxDeg-i) to get generators of degree maxDeg
-		flatten entries mingens (
-			J^(maxDeg - i) * sub(ideal(gLists#i), ring I)
-	    ) 
-	);
-	return trim ideal (flatten gs)
-)
 
 
+-- a "good" hyperplane section H on Y (relative to X) is one 
+-- which does not contain any distinguished varieties of X
 goodHyperplaneSection := (X,Y) -> (
-	ds := distinguished ( sub(X.Ideal, Y.coordRing) );
+	ds := distinguished ( sub(X.Ideal, Y.CoordinateRing) );
 	while (true) do (
 		h := random(1, ring(Y.Ideal));
-		found = true;
+		found := true;
 		-- choose a random hyperplane section of Y
 		-- test to see if it contains any distinguished varieties of X
 		-- if so, start over
@@ -167,35 +171,76 @@ goodHyperplaneSection := (X,Y) -> (
 				found = false;
 				break;
 			)
-		)
+		);
 		if found then return h
 	)
 )
 
 
+-- 
+degpr := (X,Y) -> (
+    
+    -- << "calculating degpr(X,Y)" << endl;
+    
+    ideals := for i from 1 to (dim Y)
+        list ( 
+            ideal ( sum apply(X.Equations, g -> random(0,ring(X.Ideal))*g ) )
+            );
+    hyps := sum(ideals);
+    
+    --<< "saturate " << trim(Y.Ideal + hyps) << " with respect to " << X.Ideal << endl;
+    --<< " to get " << saturate(Y.Ideal + hyps, X.Ideal) << " with degree " << degree saturate(Y.Ideal + hyps, X.Ideal) << endl;
+    
+    return degree saturate( Y.Ideal + hyps, X.Ideal )
+)
+
+
 segreClass = method(TypicalValue => RingElement)
-segreClass(Ideal,Ideal) := (iX,iY) -> (
-	Y := projectiveScheme( iY, Base => base(a_0..a_(dim variety (iX+iY))) );
+segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
+	a := symbol a;
+	Y := projectiveScheme( iY, BaseForAmbient => base(a_0..a_(dim variety (iX+iY))) );
 	X := projectiveScheme( homogenate iX, SuperScheme => Y );
 	H := X.Hyperplane;
+	N := dim X;
 
 	-- s = a_0 PP^0 + a_1 PP^1 + .. + a_N PP^N
-	-- this will become the class s(X,Y)
-	s := sum ( for i in 0..N list (a_i * H^(N-i)) );
+	-- this stands for the class s(X,Y)
+	s := sum ( for i from 0 to N list (a_i * H^(N-i)) );
 
+	-- eqns will be a list of "equations" c_0*a_0 + .. + c_n*a_n = D
+	-- returned as ( (c_0,..,c_n), D )
 	eqns := while ( dim X >= 0 )
 		list (
-			d := first degree ( (X.Ideal)_0 ) -- degree of the first generator of X.Ideal
-			D := ( d^(dim Y) * degree(Y) ) - degpr(X,Y); -- LHS of the contribution formula
+			d := first degree ( (X.Ideal)_0 ); -- degree of each generator
+			D := ( d^(dim Y) * degree(Y) ) - degpr(X,Y);
+			-- C is the degree of c(N) \cap s(X,Y)
 			C := coefficient( H^(dim X), (1 + d*H)^(dim Y) * s );
-			(apply (a_0..a_N, v -> coefficient(v,C)), D))
+			-- C is written as a polynomial in the a_i's
+			( apply (a_0..a_N, v -> coefficient(v,C)), D )
 		)
 		do (
-			hyp = goodHyperplaneSection(X,Y);
+			hyp := goodHyperplaneSection(X,Y);
 			-- replace X,Y with hyperplane sections
 			Y = projectiveScheme(Y.Ideal + hyp);
-			X = projectiveScheme(X.Ideal, SuperScheme => Y, MakeBaseOfLinearSystem => true)
+			X = projectiveScheme(X.Ideal, SuperScheme => Y, MakeBaseOfLinearSystem => true);
 		);
+
+	-- We need to solve the matrix equation determined by eqns
+	-- so we substitute the values from QQ to a finite field
+	C := sub( matrix apply(eqns, i -> toList i#0), ZZ/32479 );
+	D := sub( transpose matrix {apply(eqns, i -> i#1)}, ZZ/32479 );
+	A := flatten entries solve(C,D);
+
+	-- finally, take the vector a = (a_0,..,a_n) and form the Segre class
+	-- seg = a_0 PP^0 + a_1 PP^1 + .. + a_N PP^N
+
+	seg := sum ( for i from 0 to N
+		list (
+			-- p := length flatten entries vars ring X.Ideal;
+			lift(A#i,ZZ) * H^(X.AmbientSpace.dim - i)
+		));
+	return seg
+
 )
 
 -----------------------------------------------------------------------------
