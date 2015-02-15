@@ -12,7 +12,7 @@ needsPackage("Schubert2")
 
 -- export { "segreClass" }
 export { "ProjectiveScheme", "projectiveScheme", "BaseForAmbient", "SuperScheme", "AmbientSpace", "MakeBaseOfLinearSystem",
-		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane", "segreClass"}
+		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane", "segreClass", "Testing"}
 
 protect Equations
 protect CoordinateRing
@@ -195,7 +195,7 @@ degpr := (X,Y) -> (
 )
 
 
-segreClass = method(TypicalValue => RingElement)
+segreClass = method(TypicalValue => RingElement, Options => {Testing => false})
 segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 	a := symbol a;
 	Y := projectiveScheme( iY, BaseForAmbient => base(a_0..a_(dim variety (iX+iY))) );
@@ -233,6 +233,10 @@ segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 
 	-- finally, take the vector a = (a_0,..,a_n) and form the Segre class
 	-- seg = a_0 PP^0 + a_1 PP^1 + .. + a_N PP^N
+	if opts.Testing then (
+		ringH := ZZ(monoid[getSymbol "H"]);
+		H = ringH_0;
+	);
 
 	seg := sum ( for i from 0 to N
 		list (
@@ -405,6 +409,8 @@ assert ( cycleClass(X') === (X'.Hyperplane)^2 ) -- [X'] = [X'_red] = [pt]
 assert ( degree(X') == 2 ) -- double point has degree 2
 
 ///
+
+TEST /// input (FMPIntersectionTheory#"source directory"|"FMPIntersectionTheory/segreClass-tests.m2") ///
 
 
 
