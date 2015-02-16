@@ -81,8 +81,13 @@ projectiveScheme = method(TypicalValue => ProjectiveScheme, Options => {
 		AmbientSpace => null, -- the projective space where we will be computing
 		MakeBaseOfLinearSystem => false   -- if true, the ideal used to define the projective scheme should be made to have all terms of same degree
 	})
-projectiveScheme Ideal :=  opts -> I' -> (
-	I := if opts.MakeBaseOfLinearSystem then homogenate(I') else I';
+projectiveScheme Ideal :=  opts -> I -> (
+	if opts.SuperScheme =!= null then (
+		I = trim (I + opts.SuperScheme.Ideal);
+	);
+	if opts.MakeBaseOfLinearSystem then (
+		I = homogenate(I);
+	);
 	R := ring I;
 	N := 0;
 	eqs := flatten entries gens I;
@@ -90,7 +95,6 @@ projectiveScheme Ideal :=  opts -> I' -> (
 			N = #(flatten entries vars R) - 1;  -- dimension of projective space corresponding to proj(R)
 			projectiveBundle(N, opts.BaseForAmbient)
 		) else if opts.SuperScheme =!= null then (
-			I = trim (I + opts.SuperScheme.Ideal);
 			opts.SuperScheme.AmbientSpace
 		) else if opts.AmbientSpace =!= null then (
 			opts.AmbientSpace
@@ -196,10 +200,14 @@ degpr := (X,Y) -> (
 
 
 segreClass = method(TypicalValue => RingElement, Options => {Testing => false})
+segreClass(Ideal) := opts -> (iX) -> (
+	iY := trim ideal 0_(ring iX);
+	segreClass(iX,iY, Testing => opts.Testing)
+)
 segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 	a := symbol a;
 	Y := projectiveScheme( iY, BaseForAmbient => base(a_0..a_(dim variety (iX+iY))) );
-	X := projectiveScheme( homogenate iX, SuperScheme => Y );
+	X := projectiveScheme( iX, SuperScheme => Y, MakeBaseOfLinearSystem => true );
 	H := X.Hyperplane;
 	N := dim X;
 
@@ -207,12 +215,16 @@ segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 	-- this stands for the class s(X,Y)
 	s := sum ( for i from 0 to N list (a_i * H^(N-i)) );
 
+	d := first degree ( (X.Ideal)_0 ); -- degree of each generator
+
 	-- eqns will be a list of "equations" c_0*a_0 + .. + c_n*a_n = D
 	-- returned as ( (c_0,..,c_n), D )
 	eqns := while ( dim X >= 0 )
 		list (
-			d := first degree ( (X.Ideal)_0 ); -- degree of each generator
 			D := ( d^(dim Y) * degree(Y) ) - degpr(X,Y);
+			if opts.Testing then (
+				<< "D = ( d^(dim Y) * degree(Y) ) - degpr(X,Y) = " << d << "^" << dim Y << " * " << degree(Y) << " - " << degpr(X,Y) << endl;
+			);
 			-- C is the degree of c(N) \cap s(X,Y)
 			C := coefficient( H^(dim X), (1 + d*H)^(dim Y) * s );
 			-- C is written as a polynomial in the a_i's
@@ -227,25 +239,31 @@ segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 
 	-- We need to solve the matrix equation determined by eqns
 	-- so we substitute the values from QQ to a finite field
-	C := sub( matrix apply(eqns, i -> toList i#0), ZZ/32479 );
-	D := sub( transpose matrix {apply(eqns, i -> i#1)}, ZZ/32479 );
-	A := flatten entries solve(C,D);
+	matC := sub( matrix apply(eqns, i -> toList i#0), ZZ/32479 );
+	vecD := sub( transpose matrix {apply(eqns, i -> i#1)}, ZZ/32479 );
+	vecA := flatten entries solve(matC,vecD);
 
 	-- finally, take the vector a = (a_0,..,a_n) and form the Segre class
 	-- seg = a_0 PP^0 + a_1 PP^1 + .. + a_N PP^N
 	if opts.Testing then (
 		ringH := ZZ(monoid[getSymbol "H"]);
 		H = ringH_0;
+		<< "C = " << matC << endl;
+		<< "D = " << vecD << endl;
+		<< "A = " << vecA << endl;
 	);
 
 	seg := sum ( for i from 0 to N
 		list (
 			-- p := length flatten entries vars ring X.Ideal;
-			lift(A#i,ZZ) * H^(X.AmbientSpace.dim - i)
+			lift(vecA#i,ZZ) * H^(X.AmbientSpace.dim - i)
 		));
 	return seg
 
 )
+
+
+
 
 -----------------------------------------------------------------------------
 
@@ -284,6 +302,8 @@ multidoc ///
 	   		AmbientSpace
 	   		[projectiveScheme,SuperScheme]
 	   		SuperScheme
+	   		[projectiveScheme,MakeBaseOfLinearSystem]
+	   		MakeBaseOfLinearSystem
 		Headline
 			make a projective scheme
 		Usage
@@ -334,6 +354,26 @@ multidoc ///
 	------
 	Node
 		Key
+			(segreClass,Ideal,Ideal)
+			(segreClass,Ideal)
+			segreClass
+			[segreClass,Testing]
+			Testing
+		Headline
+			Compute the Segre class of a subvariety
+		Usage
+			segreClass(iX)
+			segreClass(iX,iY)
+		Inputs
+			iX:Ideal
+			iY:Ideal
+				iY corresponds to a scheme containing Y
+		Outputs
+			:
+				the Segre class of X in PP^N, or the Segre class of X in Y
+	------
+	Node
+		Key
 			(degree,ProjectiveScheme)
 		Headline
 			gives the degree of a ProjectiveScheme
@@ -376,12 +416,6 @@ multidoc ///
 	------
 	Node
 		Key
-			AmbientSpace
-		Headline
-			a symbol used internally as a key
-	------
-	Node
-		Key
 			Hyperplane
 		Headline
 			a symbol used internally as a key
@@ -407,10 +441,13 @@ assert ( dim(X) == 1 )
 
 assert ( cycleClass(X') === (X'.Hyperplane)^2 ) -- [X'] = [X'_red] = [pt]
 assert ( degree(X') == 2 ) -- double point has degree 2
-
 ///
 
-TEST /// input (FMPIntersectionTheory#"source directory"|"FMPIntersectionTheory/segreClass-tests.m2") ///
+load (FMPIntersectionTheory#"source directory"|"FMPIntersectionTheory/segreClass-tests2.m2")
+
+-- TEST /// input (FMPIntersectionTheory#"source directory"|"FMPIntersectionTheory/segreClass-tests.m2") ///
+
+
 
 
 
