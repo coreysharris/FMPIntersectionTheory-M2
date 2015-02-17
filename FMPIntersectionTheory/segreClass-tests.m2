@@ -19,6 +19,15 @@ testEquality = (A,B) -> (
 	assert (A' == B')
 )
 
+veronese = (R,d) -> (
+    k := coefficientRing R;
+    I := ideal (flatten entries vars R);
+    II := I^d;
+    n := #(flatten entries gens II);
+    y := local y;
+    return map(R, k[y_0..y_(n-1)], gens II)
+)
+
 ------------------------------------------------------
 -- SETUP
 ------------------------------------------------------
@@ -105,10 +114,12 @@ testEquality( (X+Y,Z), "2*H^3");
 -- as this subscheme is a pair of points.
 ------------------------------------------------------
 
-X = ideal(y0);
-Y = ideal(y0^2 + y1^2 - y2^2);
+-- THIS TEST IS SLOWWWWWWW
 
-testEquality( (X+Y), "2*H^2");
+-- X = ideal(y0);
+-- Y = ideal(y0^2 + y1^2 - y2^2);
+
+-- testEquality( (X+Y), "2*H^2");
 
 ------------------------------------------------------
 -- Take the cubic x^2*y-z^3 in PP2 and consider the 

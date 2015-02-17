@@ -12,7 +12,7 @@ needsPackage("Schubert2")
 
 -- export { "segreClass" }
 export { "ProjectiveScheme", "projectiveScheme", "BaseForAmbient", "SuperScheme", "AmbientSpace", "MakeBaseOfLinearSystem",
-		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane", "segreClass", "Testing"}
+		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane", "segreClass", "Testing", "chernMather"}
 
 protect Equations
 protect CoordinateRing
@@ -264,6 +264,37 @@ segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 
 
 
+RingElement ** AbstractSheaf := (s, L) -> (
+	c := chern L;
+	R := ring s;
+
+	return sum apply( terms s, t -> (
+		codimn := first degree(t_R);
+		return t * (c^(-codimn));
+	))
+)
+
+chernMather = method()
+chernMather(ProjectiveScheme) := (X) -> (
+	cX := cycleClass X;
+	T := tangentBundle(X.AmbientSpace);
+	O := OO_(X.AmbientSpace);
+	iJ := (singularLocus X.Ideal).ideal;
+	
+	if dim variety iJ < 0 then return chern(T) * cX * (1+cX)^(-1);
+	
+	s := segreClass(iJ,X.Ideal);
+	a := sub(adams(-1,s), X.IntersectionRing);
+	
+	return chern(T) * ( cX * (1+cX)^(-1) + (a ** O(cX) ) )
+)
+chernMather(Ideal) := (iX) -> (
+	X := projectiveScheme(iX);
+	return chernMather(X)
+)
+
+
+
 
 -----------------------------------------------------------------------------
 
@@ -456,6 +487,39 @@ multidoc ///
 				I = ideal x*y;
 				X = projectiveScheme(I);
 				dim X
+	------
+	Node
+		Key
+			(symbol **, RingElement, AbstractSheaf)
+		Headline
+			kljhlkjh
+	------
+	Node
+		Key
+			(chernMather,Ideal)
+			chernMather
+		Headline
+			Compute Mather's Chern class
+		Usage
+			chernMather(I)
+		Inputs
+			I:Ideal
+		Outputs
+			:
+				a ring element
+	------
+	Node
+		Key
+			(chernMather,ProjectiveScheme)
+		Headline
+			Compute Mather's Chern class
+		Usage
+			chernMather(X)
+		Inputs
+			X:ProjectiveScheme
+		Outputs
+			:
+				a ring element
 	------
 	Node
 		Key
