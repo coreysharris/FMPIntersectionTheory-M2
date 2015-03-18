@@ -4,8 +4,8 @@ newPackage(
 	Date => "February 9, 2015",
 	Authors => {{Name => "Corey Harris", Email => "charris@math.fsu.edu", HomePage => "http://coreyharris.name"}},
 	Headline => "A package for Fulton-MacPherson intersection theory.",
-	AuxiliaryFiles => true
-	-- PackageExports => {"Shubert2"}
+	AuxiliaryFiles => true,
+	PackageExports => {"Schubert2"}
 )
 
 needsPackage("Schubert2")
@@ -115,6 +115,11 @@ projectiveScheme Ideal :=  opts -> I -> (
 		global codim => null,
 		CycleClass => null
 	}
+)
+
+intersectionring = method()
+intersectionring ProjectiveScheme := X -> (
+	return X.IntersectionRing
 )
 
 
@@ -300,6 +305,24 @@ chernMather(ProjectiveScheme) := (X) -> (
 chernMather(Ideal) := (iX) -> (
 	X := projectiveScheme(iX);
 	return chernMather(X)
+)
+
+chernSchwartzMacPherson = method()
+chernSchwartzMacPherson(ProjectiveScheme) := (X) -> (
+	cX := cycleClass X;
+	T := tangentBundle(X.AmbientSpace);
+	O := OO_(X.AmbientSpace);
+	-- iJ := (singularLocus X.Ideal).ideal;
+	
+	-- if dim variety iJ < 0 then return chern(T) * cX * (1+cX)^(-1);
+	
+	s := chern(O(cX)) * sub(segreClass(X.Ideal),X.IntersectionRing);
+	a := sub(adams(-1,s), X.IntersectionRing);
+	
+	return chern(T) * ( cX * (1+cX)^(-1) + (a ** O(cX) ) )
+)
+chernSchwartzMacPherson(Ideal) := (iX) -> (
+	return chernSchwartzMacPherson(projectiveScheme(iX))
 )
 
 
