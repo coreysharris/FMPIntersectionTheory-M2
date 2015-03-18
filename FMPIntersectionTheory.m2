@@ -105,11 +105,11 @@ projectiveScheme Ideal :=  opts -> I -> (
 
 	new ProjectiveScheme from {
 		global Ideal => I,
-		CoordinateRing => quotient I,
-		Equations => eqs,
-		AmbientSpace => P,
-		IntersectionRing => intersectionRing(P),
-		Hyperplane => ( chern_1 (OO_P(1)) ), -- the class of a hyperplane in ambientSpace
+		global CoordinateRing => quotient I,
+		global Equations => eqs,
+		global AmbientSpace => P,
+		global IntersectionRing => intersectionRing(P),
+		global Hyperplane => ( chern_1 (OO_P(1)) ), -- the class of a hyperplane in ambientSpace
 		global dim => null,
 		global degree => null,
 		global codim => null,
@@ -202,7 +202,7 @@ degpr := (X,Y) -> (
 segreClass = method(TypicalValue => RingElement, Options => {Testing => false})
 segreClass(Ideal) := opts -> (iX) -> (
 	iY := trim ideal 0_(ring iX);
-	segreClass(iX,iY, Testing => opts.Testing)
+	segreClass(iX,iY, opts)
 )
 segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 	a := symbol a;
@@ -258,7 +258,16 @@ segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 			-- p := length flatten entries vars ring X.Ideal;
 			lift(vecA#i,ZZ) * H^(X.AmbientSpace.dim - i)
 		));
-	return seg
+	return sub(seg,X.IntersectionRing)
+)
+segreClass(ProjectiveScheme,ProjectiveScheme) := opts -> (X,Y) -> (
+	seg := segreClass(X.Ideal, Y.Ideal, opts);
+	return sub(seg,X.IntersectionRing)
+)
+segreClass(ProjectiveScheme) := opts -> (X) -> (
+	seg := segreClass(X.Ideal, opts);
+	return sub(seg, X.IntersectionRing)
+)
 
 )
 
