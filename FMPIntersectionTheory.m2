@@ -12,7 +12,8 @@ needsPackage("Schubert2")
 
 -- export { "segreClass" }
 export { "ProjectiveScheme", "projectiveScheme", "BaseForAmbient", "SuperScheme", "AmbientSpace", "MakeBaseOfLinearSystem",
-		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane", "segreClass", "Testing", "chernMather"}
+		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane", "intersectionring",
+		"segreClass", "Testing", "chernMather","chernSchwartzMacPherson"}
 
 protect Equations
 protect CoordinateRing
@@ -201,13 +202,14 @@ degpr := (X,Y) -> (
     --<< " to get " << saturate(Y.Ideal + hyps, X.Ideal) << " with degree " << degree saturate(Y.Ideal + hyps, X.Ideal) << endl;
     
     return degree saturate( Y.Ideal + hyps, X.Ideal )
+    -- return degree quotient( Y.Ideal + hyps, X.Ideal )
 )
 
 
 segreClass = method(TypicalValue => RingElement, Options => {Testing => false})
 segreClass(Ideal) := opts -> (iX) -> (
 	iY := trim ideal 0_(ring iX);
-	segreClass(iX,iY, opts)
+	return segreClass(iX,iY, opts)
 )
 segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 	a := symbol a;
@@ -221,6 +223,9 @@ segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 	s := sum ( for i from 0 to N list (a_i * H^(N-i)) );
 
 	d := first degree ( (X.Ideal)_0 ); -- degree of each generator
+
+	X0 := X;
+	Y0 := Y;
 
 	-- eqns will be a list of "equations" c_0*a_0 + .. + c_n*a_n = D
 	-- returned as ( (c_0,..,c_n), D )
@@ -263,20 +268,16 @@ segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 			-- p := length flatten entries vars ring X.Ideal;
 			lift(vecA#i,ZZ) * H^(X.AmbientSpace.dim - i)
 		));
-	return sub(seg,X.IntersectionRing)
+
+	if opts.Testing then (return seg);
+	return sub(seg,X0.IntersectionRing)
 )
 segreClass(ProjectiveScheme,ProjectiveScheme) := opts -> (X,Y) -> (
-	seg := segreClass(X.Ideal, Y.Ideal, opts);
-	return sub(seg,X.IntersectionRing)
+	return segreClass(X.Ideal, Y.Ideal, opts);
 )
 segreClass(ProjectiveScheme) := opts -> (X) -> (
-	seg := segreClass(X.Ideal, opts);
-	return sub(seg, X.IntersectionRing)
+	return segreClass(X.Ideal, opts);
 )
-
-)
-
-
 
 RingElement ** AbstractSheaf := (s, L) -> (
 	c := chern L;
