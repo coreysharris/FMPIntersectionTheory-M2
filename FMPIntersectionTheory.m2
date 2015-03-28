@@ -15,9 +15,9 @@ export { "ProjectiveScheme", "projectiveScheme", "BaseForAmbient", "SuperScheme"
 		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane", "intersectionring",
 		"segreClass", "Testing", "chernMather","chernSchwartzMacPherson"}
 
-protect Equations
-protect CoordinateRing
-protect Hyperplane
+protect degpr
+protect segreAlgCoefficientMatrix
+-- protect segreAlgCoefficientMatrix
 
 hasAttribute = value Core#"private dictionary"#"hasAttribute"
 getAttribute = value Core#"private dictionary"#"getAttribute"
@@ -205,6 +205,16 @@ degpr := (X,Y) -> (
     -- return degree quotient( Y.Ideal + hyps, X.Ideal )
 )
 
+segreAlgCoefficientMatrix = method()
+segreAlgCoefficientMatrix(ZZ,ZZ,ZZ) := (n,r,d) -> (
+	l := for i from 0 to r list (
+		for j from 0 to r list (
+			binomial(n-i,j-i)*d^(j-i)
+		)
+	);
+	return matrix(l)
+)
+
 
 segreClass = method(TypicalValue => RingElement, Options => {Testing => false})
 segreClass(Ideal) := opts -> (iX) -> (
@@ -235,10 +245,7 @@ segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 			if opts.Testing then (
 				<< "D = ( d^(dim Y) * degree(Y) ) - degpr(X,Y) = " << d << "^" << dim Y << " * " << degree(Y) << " - " << degpr(X,Y) << endl;
 			);
-			-- C is the degree of c(N) \cap s(X,Y)
-			C := coefficient( H^(dim X), (1 + d*H)^(dim Y) * s );
-			-- C is written as a polynomial in the a_i's
-			( apply (a_0..a_N, v -> coefficient(v,C)), D )
+			D
 		)
 		do (
 			hyp := goodHyperplaneSection(X,Y);
@@ -249,8 +256,8 @@ segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 
 	-- We need to solve the matrix equation determined by eqns
 	-- so we substitute the values from QQ to a finite field
-	matC := sub( matrix apply(eqns, i -> toList i#0), ZZ/32479 );
-	vecD := sub( transpose matrix {apply(eqns, i -> i#1)}, ZZ/32479 );
+	matC := sub( segreAlgCoefficientMatrix(dim Y0, dim X0, d), ZZ/32479 );
+	vecD := sub(transpose matrix {eqns}, ZZ/32479);
 	vecA := flatten entries solve(matC,vecD);
 
 	-- finally, take the vector a = (a_0,..,a_n) and form the Segre class
