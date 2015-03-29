@@ -11,7 +11,7 @@ newPackage(
 needsPackage("Schubert2")
 
 -- export { "segreClass" }
-export { "ProjectiveScheme", "projectiveScheme", "BaseForAmbient", "SuperScheme", "AmbientSpace", "MakeBaseOfLinearSystem",
+export { "ProjectiveScheme", "projectiveScheme", "SuperScheme", "AmbientSpace", "MakeBaseOfLinearSystem",
 		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane", "intersectionring",
 		"segreClass", "Testing", "chernMather","chernSchwartzMacPherson", "restrictToHyperplaneIntersection"}
 
@@ -73,7 +73,6 @@ ProjectiveScheme#{Standard,AfterPrint} = X -> (
 )
 
 projectiveScheme = method(TypicalValue => ProjectiveScheme, Options => {
-		BaseForAmbient => null,  -- sets the ambient space to be a projective bundle over Base
 		SuperScheme => null,  -- a ProjectiveScheme containing the one we are defining
 							  -- If I is the ideal of SuperScheme in R, and we define our 
 							  -- new scheme with J in R, we instead will use I+J
@@ -90,10 +89,7 @@ projectiveScheme Ideal :=  opts -> I -> (
 	R := ring I;
 	N := 0;
 	eqs := flatten entries gens I;
-	P := if opts.BaseForAmbient =!= null then (
-			N = #(flatten entries vars R) - 1;  -- dimension of projective space corresponding to proj(R)
-			projectiveBundle(N, opts.BaseForAmbient)
-		) else if opts.SuperScheme =!= null then (
+	P := if opts.SuperScheme =!= null then (
 			opts.SuperScheme.AmbientSpace
 		) else if opts.AmbientSpace =!= null then (
 			opts.AmbientSpace
@@ -379,8 +375,6 @@ multidoc ///
 		Key
 			(projectiveScheme,Ideal)
 	   		projectiveScheme
-	   		[projectiveScheme,BaseForAmbient]
-	   		BaseForAmbient
 	   		[projectiveScheme,AmbientSpace]
 	   		AmbientSpace
 	   		[projectiveScheme,SuperScheme]
@@ -393,8 +387,6 @@ multidoc ///
 			projectiveScheme I
 		Inputs
 			I:Ideal
-			BaseForAmbient => Sequence
-				the Sequence is passed to @ TO base @ to produce a projective bundle
 			AmbientSpace => ProjectiveScheme
 				a @ TO2 {projectiveBundle,"projective bundle"} @ where the ProjectiveScheme will live
 			MakeBaseOfLinearSystem => Boolean
