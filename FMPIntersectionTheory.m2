@@ -13,7 +13,7 @@ needsPackage("Schubert2")
 -- export { "segreClass" }
 export { "ProjectiveScheme", "projectiveScheme", "SuperScheme", "AmbientSpace", "MakeBaseOfLinearSystem",
 		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane", "intersectionring",
-		"segreClass", "Testing", "chernMather","chernSchwartzMacPherson", "restrictToHyperplaneIntersection"}
+		"segreClass", "Testing", "chernMather","chernSchwartzMacPherson", "restrictToHplaneSection"}
 
 -- protect segreAlgCoefficientMatrix
 
@@ -214,15 +214,14 @@ restrictToHplaneSection(ProjectiveScheme, Thing) := (X,h) -> (
 	-- here X is the scheme we're restricting and h is a hyperplane that 
 	-- has already been checked to be 'general'
 	N := dim(X.AmbientSpace);
+	<< N << endl;
 	-- P := ZZ(monoid[ (i -> getSymbol("w_"|toString(i)) ) \ (0..N-1) ]);
 	-- for some reason above line must be run twice to work ?!?
-	P := ZZ(monoid[ (i -> (getSymbol "w")_i ) \ (0..N-1) ]);
-	genslist := flatten entries gens X.Ideal;
+	P := QQ(monoid[ (i -> (getSymbol "w")_i ) \ (0..N-1) ]);
 	R := ring(X.Ideal);
-	coordchangegenslist := genslist / (g -> sub(g,{R_N => h}));
-	restrictedgenslist := coordchangegenslist / (g -> sub(g, {R_N => 0}|((i -> R_i => P_i) \ toList(0..N-1)) ) );
-	newIdeal := ideal restrictedgenslist;
-	return newIdeal
+	coordchangeIdeal := sub(X.Ideal,{R_N => h});
+	restrictedIdeal := sub(coordchangeIdeal, {R_N => 0}|((i -> R_i => P_i) \ toList(0..N-1)) );
+	return restrictedIdeal
 )
 
 segreClass = method(TypicalValue => RingElement, Options => {Testing => false})
@@ -250,8 +249,10 @@ segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 		do (
 			hyp := goodHyperplaneSection(X,Y);
 			-- replace X,Y with hyperplane sections
-			Y = projectiveScheme(Y.Ideal + hyp);
-			X = projectiveScheme(X.Ideal, SuperScheme => Y, MakeBaseOfLinearSystem => true);
+			IY := restrictToHplaneSection(Y,hyp);
+			IX := sub(restrictToHplaneSection(X,hyp), ring(IY));
+			Y = projectiveScheme IY;
+			X = projectiveScheme(IX, SuperScheme => Y, MakeBaseOfLinearSystem => true);
 		);
 
 	-- We need to solve the matrix equation determined by eqns
@@ -273,7 +274,7 @@ segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 	seg := sum ( for i from 0 to N
 		list (
 			-- p := length flatten entries vars ring X.Ideal;
-			lift(vecA#i,ZZ) * H^(X.AmbientSpace.dim - i)
+			lift(vecA#i,ZZ) * H^(X0.AmbientSpace.dim - i)
 		));
 
 	if opts.Testing then (return seg);
