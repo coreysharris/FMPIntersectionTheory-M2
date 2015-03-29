@@ -209,8 +209,8 @@ segreAlgCoefficientMatrix(ZZ,ZZ,ZZ) := (n,r,d) -> (
 	return matrix(l)
 )
 
-restrictToHyperplaneIntersection = method()
-restrictToHyperplaneIntersection(ProjectiveScheme, Thing) := (X,h) -> (
+restrictToHplaneSection = method()
+restrictToHplaneSection(ProjectiveScheme, Thing) := (X,h) -> (
 	-- here X is the scheme we're restricting and h is a hyperplane that 
 	-- has already been checked to be 'general'
 	N := dim(X.AmbientSpace);
@@ -231,24 +231,16 @@ segreClass(Ideal) := opts -> (iX) -> (
 	return segreClass(iX,iY, opts)
 )
 segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
-	-- a := symbol a;
-	-- Y := projectiveScheme( iY, BaseForAmbient => base(a_0..a_(dim variety (iX+iY))) );
 	Y := projectiveScheme(iY);
 	X := projectiveScheme( iX, SuperScheme => Y, MakeBaseOfLinearSystem => true );
 	H := X.Hyperplane;
 	N := dim X;
-
-	-- s = a_0 PP^0 + a_1 PP^1 + .. + a_N PP^N
-	-- this stands for the class s(X,Y)
-	-- s := sum ( for i from 0 to N list (a_i * H^(N-i)) );
 
 	d := first degree ( (X.Ideal)_0 ); -- degree of each generator
 
 	X0 := X;
 	Y0 := Y;
 
-	-- eqns will be a list of "equations" c_0*a_0 + .. + c_n*a_n = D
-	-- returned as ( (c_0,..,c_n), D )
 	eqns := while ( dim X >= 0 )
 		list (
 			D := ( d^(dim Y) * degree(Y) ) - degpr(X,Y);
