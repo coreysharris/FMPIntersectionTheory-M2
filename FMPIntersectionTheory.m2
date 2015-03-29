@@ -235,15 +235,16 @@ segreClass(Ideal) := opts -> (iX) -> (
 	return segreClass(iX,iY, opts)
 )
 segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
-	a := symbol a;
-	Y := projectiveScheme( iY, BaseForAmbient => base(a_0..a_(dim variety (iX+iY))) );
+	-- a := symbol a;
+	-- Y := projectiveScheme( iY, BaseForAmbient => base(a_0..a_(dim variety (iX+iY))) );
+	Y := projectiveScheme(iY);
 	X := projectiveScheme( iX, SuperScheme => Y, MakeBaseOfLinearSystem => true );
 	H := X.Hyperplane;
 	N := dim X;
 
 	-- s = a_0 PP^0 + a_1 PP^1 + .. + a_N PP^N
 	-- this stands for the class s(X,Y)
-	s := sum ( for i from 0 to N list (a_i * H^(N-i)) );
+	-- s := sum ( for i from 0 to N list (a_i * H^(N-i)) );
 
 	d := first degree ( (X.Ideal)_0 ); -- degree of each generator
 
