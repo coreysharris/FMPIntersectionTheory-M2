@@ -13,10 +13,8 @@ needsPackage("Schubert2")
 -- export { "segreClass" }
 export { "ProjectiveScheme", "projectiveScheme", "BaseForAmbient", "SuperScheme", "AmbientSpace", "MakeBaseOfLinearSystem",
 		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane", "intersectionring",
-		"segreClass", "Testing", "chernMather","chernSchwartzMacPherson"}
+		"segreClass", "Testing", "chernMather","chernSchwartzMacPherson", "restrictToHyperplaneIntersection"}
 
-protect degpr
-protect segreAlgCoefficientMatrix
 -- protect segreAlgCoefficientMatrix
 
 hasAttribute = value Core#"private dictionary"#"hasAttribute"
@@ -215,6 +213,21 @@ segreAlgCoefficientMatrix(ZZ,ZZ,ZZ) := (n,r,d) -> (
 	return matrix(l)
 )
 
+restrictToHyperplaneIntersection = method()
+restrictToHyperplaneIntersection(ProjectiveScheme, Thing) := (X,h) -> (
+	-- here X is the scheme we're restricting and h is a hyperplane that 
+	-- has already been checked to be 'general'
+	N := dim(X.AmbientSpace);
+	-- P := ZZ(monoid[ (i -> getSymbol("w_"|toString(i)) ) \ (0..N-1) ]);
+	-- for some reason above line must be run twice to work ?!?
+	P := ZZ(monoid[ (i -> (getSymbol "w")_i ) \ (0..N-1) ]);
+	genslist := flatten entries gens X.Ideal;
+	R := ring(X.Ideal);
+	coordchangegenslist := genslist / (g -> sub(g,{R_N => h}));
+	restrictedgenslist := coordchangegenslist / (g -> sub(g, {R_N => 0}|((i -> R_i => P_i) \ toList(0..N-1)) ) );
+	newIdeal := ideal restrictedgenslist;
+	return newIdeal
+)
 
 segreClass = method(TypicalValue => RingElement, Options => {Testing => false})
 segreClass(Ideal) := opts -> (iX) -> (
@@ -242,9 +255,7 @@ segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 	eqns := while ( dim X >= 0 )
 		list (
 			D := ( d^(dim Y) * degree(Y) ) - degpr(X,Y);
-			if opts.Testing then (
-				<< "D = ( d^(dim Y) * degree(Y) ) - degpr(X,Y) = " << d << "^" << dim Y << " * " << degree(Y) << " - " << degpr(X,Y) << endl;
-			);
+			if opts.Testing then (<< "D = ( d^(dim Y) * degree(Y) ) - degpr(X,Y) = " << d << "^" << dim Y << " * " << degree(Y) << " - " << degpr(X,Y) << endl; );
 			D
 		)
 		do (
