@@ -421,7 +421,48 @@ chernSchwartzMacPherson(Ideal) := (iX) -> (
 	return chernSchwartzMacPherson(projectiveScheme(iX))
 )
 
+projectToHypersurface = method()
+projectToHypersurface(Ideal) := (X) -> (
+	c := codim X;
+	R := ring X;
+	kk := coefficientRing R;
+	L := sum( c+1, i -> ideal(random(1,R)) );
+	pr := map(R,kk(monoid[(i -> (getSymbol "a")_i ) \ (0..c)]), gens L );
+	return preimage_pr X
+)
 
+dualDegree = method()
+dualDegree(Ideal) := (X) -> (
+	{*
+		Compute the degree of the dual of a hypersurface
+	*}
+	d := degree X;
+	n := #(gens ring X)-1;
+	seg := segreClass(ideal singularLocus X, X);
+	A := ring seg;
+	return d*(d-1)^(n-1) - sum(n, i -> binomial(n-1,i) * (d-1)^i * seg_((A_1)^(n-i)) )
+)
+dualDegree(ProjectiveScheme) := (X) -> (
+	dualDegree(X.Ideal)
+)
+
+polarRanks = method()
+polarRanks(Ideal) := (X') -> (
+	X := if codim X' > 1 then (
+		projectToHypersurface X'
+	) else X';
+	d := degree X;
+	n := dim variety X;
+	seg := segreClass(ideal singularLocus X, X);
+	A := ring seg;
+	ranks := for k from 0 to n list (
+		d*(d-1)^(k) - sum(k-1, i -> binomial(k,i) * (d-1)^i * seg_((A_1)^(k+1-i)) )
+	);
+	return ranks
+)
+polarRanks(ProjectiveScheme) := (X) -> (
+	polarRanks(X.Ideal)
+)
 
 
 -----------------------------------------------------------------------------
