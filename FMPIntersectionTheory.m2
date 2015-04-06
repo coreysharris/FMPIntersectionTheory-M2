@@ -13,7 +13,7 @@ needsPackage("Schubert2")
 -- export { "segreClass" }
 export { "ProjectiveScheme", "projectiveScheme", "SuperScheme", "AmbientSpace", "MakeBaseOfLinearSystem",
 		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane", "intersectionring",
-		"segreClass", "segreClass2", "Testing", "chernMather","chernSchwartzMacPherson", "restrictToHplaneSection", "dualDegree", "polarRanks"}
+		"segreClass", "Testing", "chernMather","chernSchwartzMacPherson", "restrictToHplaneSection", "dualDegree", "polarRanks"}
 
 -- protect segreAlgCoefficientMatrix
 
@@ -247,71 +247,8 @@ restrictToHplaneSection(ProjectiveScheme, Thing) := (X,h) -> (
 	return restrictedIdeal
 )
 
-segreClass2 = method(TypicalValue => RingElement, Options => {Testing => false})
-segreClass2(Ideal) := opts -> (iX) -> (
-	iY := trim ideal 0_(ring iX);
-	return segreClass(iX,iY, opts)
-)
-segreClass2(Ideal,Ideal) := opts -> (iX,iY) -> (
-	Y := projectiveScheme(iY);
-	X := projectiveScheme( iX, SuperScheme => Y, MakeBaseOfLinearSystem => true );
-	H := X.Hyperplane;
-	N := dim X;
 
-	d := first degree ( (X.Ideal)_0 ); -- degree of each generator
-
-	X0 := X;
-	Y0 := Y;
-
-	eqns := while ( dim X >= 0 )
-		list (
-			D := ( d^(dim Y) * degree(Y) ) - degpr(X,Y);
-			if opts.Testing then (<< "D = ( d^(dim Y) * degree(Y) ) - degpr(X,Y) = " << d << "^" << dim Y << " * " << degree(Y) << " - " << degpr(X,Y) << endl; );
-			D
-		)
-		do (
-			hyp := goodHyperplaneSection(X,Y);
-			-- replace X,Y with hyperplane sections
-			IY := restrictToHplaneSection(Y,hyp);
-			IX := sub(restrictToHplaneSection(X,hyp), ring(IY));
-			Y = projectiveScheme IY;
-			X = projectiveScheme(IX, SuperScheme => Y, MakeBaseOfLinearSystem => true);
-		);
-
-	-- We need to solve the matrix equation determined by eqns
-	-- so we substitute the values from QQ to a finite field
-	matC := sub( segreAlgCoefficientMatrix(dim Y0, dim X0, d), ZZ/32479 );
-	vecD := sub(transpose matrix {eqns}, ZZ/32479);
-	vecA := flatten entries solve(matC,vecD);
-
-	-- finally, take the vector a = (a_0,..,a_n) and form the Segre class
-	-- seg = a_0 PP^0 + a_1 PP^1 + .. + a_N PP^N
-	if opts.Testing then (
-		ringH := ZZ(monoid[getSymbol "H"]);
-		H = ringH_0;
-		<< "C = " << matC << endl;
-		<< "D = " << vecD << endl;
-		<< "A = " << vecA << endl;
-	);
-
-	seg := sum ( for i from 0 to N
-		list (
-			-- p := length flatten entries vars ring X.Ideal;
-			lift(vecA#i,ZZ) * H^(X0.AmbientSpace.dim - i)
-		));
-
-	if opts.Testing then (return seg);
-	return sub(seg,X0.IntersectionRing)
-)
-segreClass2(ProjectiveScheme,ProjectiveScheme) := opts -> (X,Y) -> (
-	return segreClass(X.Ideal, Y.Ideal, opts);
-)
-segreClass2(ProjectiveScheme) := opts -> (X) -> (
-	return segreClass(X.Ideal, opts);
-)
-
-
-segreClass = method(TypicalValue => RingElement, Options => {Testing => false})
+segreClass = method(TypicalValue => RingElement, Options => {Testing => false, Strategy => "Helmer"})
 segreClass(Ideal) := opts -> (iX) -> (
 	iY := trim ideal 0_(ring iX);
 	return segreClass(iX,iY, opts)
@@ -329,8 +266,13 @@ segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 
 	eqns := while ( dim X >= 0 )
 		list (
-			D := ( d^(dim Y) * degree(Y) ) - degpr(X,Y);
-			if opts.Testing then (<< "D = ( d^(dim Y) * degree(Y) ) - projDeg(X.Ideal,Y.Ideal) = " << d << "^" << dim Y << " * " << degree(Y) << " - " << projDeg(X.Ideal,Y.Ideal) << endl; );
+			pdeg := if opts.Strategy == "Helmer" then (
+					projDeg(X.Ideal,Y.Ideal)
+				) else if opts.Strategy == "Saturate" then (
+					degpr(X,Y)
+				);
+			D := ( d^(dim Y) * degree(Y) ) - pdeg;
+			-- if opts.Testing then (<< "D = ( d^(dim Y) * degree(Y) ) - projDeg(X.Ideal,Y.Ideal) = " << d << "^" << dim Y << " * " << degree(Y) << " - " << projDeg(X.Ideal,Y.Ideal) << endl; );
 			D
 		)
 		do (

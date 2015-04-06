@@ -8,10 +8,13 @@ testEqualityOLD = (A,B) -> (
 )
 
 testEquality = (A,B) -> (
-	A' := toString segreClass(A,Testing=>true);
+	A1 := toString segreClass(A,Testing=>true,Strategy=>"Helmer");
+	A2 := toString segreClass(A,Testing=>true,Strategy=>"Saturate");
 	B' := toString B;
-	<<  A' << " should match " << B' << endl;
-	assert (A' == B')
+	<<  A1 << " should match " << B' << endl;
+	<< "and " << A2 << " should too" << endl;
+	assert (A1 == B');
+	assert (A2 == B');
 )
 
 veronese = (R,d) -> (
