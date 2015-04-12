@@ -245,7 +245,7 @@ restrictToHplaneSection(ProjectiveScheme, Thing) := (X,h) -> (
 )
 
 
-segreClass = method(TypicalValue => RingElement, Options => {Testing => false, Strategy => "Helmer"})
+segreClass = method(TypicalValue => RingElement, Options => {Testing => false, Strategy => "Saturate"})
 segreClass(Ideal) := opts -> (iX) -> (
 	iY := trim ideal 0_(ring iX);
 	return segreClass(iX,iY, opts)
