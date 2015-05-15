@@ -207,7 +207,7 @@ projDegSaturate := (X,Y) -> (
 projDegHelmer = method()
 projDegHelmer(Ideal,Ideal) := (X,Y) -> (
     S := ring(X);
-    kk := coefficientRing(S);
+    kk := coefficientRing ring(X);
     St := kk(monoid[gens S, getSymbol "T"]);
     SX := sub(X,St);
     SY := sub(Y,St);
@@ -261,6 +261,7 @@ segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 	Y := projectiveScheme(iY);
 	X := projectiveScheme( iX, SuperScheme => Y, MakeBaseOfLinearSystem => true );
 	H := X.Hyperplane;
+	if dim X < 0 then (return 0*H);
 	N := dim X;
 
 	d := first degree ( (X.Ideal)_0 ); -- degree of each generator
