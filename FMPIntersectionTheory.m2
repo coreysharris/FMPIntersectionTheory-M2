@@ -11,7 +11,7 @@ newPackage(
 needsPackage("Schubert2")
 
 -- export { "segreClass" }
-export { "ProjectiveScheme", "projectiveScheme", "SuperScheme", "AmbientSpace", "MakeBaseOfLinearSystem",
+export { "ProjectiveScheme", "projectiveScheme", "SuperScheme", "AmbientSpace", "MakeBaseOfLinearSystem", "BaseField",
 		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane", "intersectionring",
 		"segreClass", "Testing", "chernMather","chernSchwartzMacPherson", "restrictToHplaneSection", "dualDegree", "polarRanks"}
 
@@ -100,6 +100,7 @@ projectiveScheme Ideal :=  opts -> I -> (
 
 	new ProjectiveScheme from {
 		global Ideal => I,
+		global BaseField => coefficientRing ring I,
 		global CoordinateRing => quotient I,
 		global Equations => eqs,
 		global AmbientSpace => P,
@@ -195,7 +196,11 @@ projDegSaturate := (X,Y) -> (
     --<< "saturate " << trim(Y.Ideal + hyps) << " with respect to " << X.Ideal << endl;
     --<< " to get " << saturate(Y.Ideal + hyps, X.Ideal) << " with degree " << degree saturate(Y.Ideal + hyps, X.Ideal) << endl;
     
-    return degree saturate( Y.Ideal + hyps, X.Ideal )
+    if char(X.BaseField) > 0 then (
+    	return degree saturate( Y.Ideal + hyps, X.Ideal, Strategy => "F4")
+    ) else (
+    	return degree saturate( Y.Ideal + hyps, X.Ideal)
+    )
     -- return degree quotient( Y.Ideal + hyps, X.Ideal )
 )
 
@@ -237,10 +242,12 @@ restrictToHplaneSection(ProjectiveScheme, Thing) := (X,h) -> (
 	N := dim(X.AmbientSpace);
 	-- P := ZZ(monoid[ (i -> getSymbol("w_"|toString(i)) ) \ (0..N-1) ]);
 	-- for some reason above line must be run twice to work ?!?
-	P := QQ(monoid[ (i -> (getSymbol "w")_i ) \ (0..N-1) ]);
+	kk := X.BaseField;
+	P := kk(monoid[ (i -> (getSymbol "w")_i ) \ (0..N-1) ]);
 	R := ring(X.Ideal);
 	coordchangeIdeal := sub(X.Ideal,{R_N => h});
 	restrictedIdeal := sub(coordchangeIdeal, {R_N => 0}|((i -> R_i => P_i) \ toList(0..N-1)) );
+	-- << toString(restrictedIdeal) << "\n in : " << describe(ring restrictedIdeal) << endl;
 	return restrictedIdeal
 )
 
