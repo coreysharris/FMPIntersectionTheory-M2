@@ -218,7 +218,7 @@ projDegSaturate := (X,Y) -> (
             );
     hyps := sum(ideals);
     
-    --<< "saturate " << trim(Y.Ideal + hyps) << " with respect to " << X.Ideal << endl;
+    -- << "saturate " << trim(Y.Ideal + hyps) << " with respect to " << X.Ideal << endl;
     --<< " to get " << saturate(Y.Ideal + hyps, X.Ideal) << " with degree " << degree saturate(Y.Ideal + hyps, X.Ideal) << endl;
     
     if char(X.BaseField) > 0 then (
@@ -262,8 +262,8 @@ segreAlgCoefficientMatrix(ZZ,ZZ,ZZ) := (n,r,d) -> (
 
 restrictToHplaneSection = method()
 restrictToHplaneSection(ProjectiveScheme, Thing) := (X,h) -> (
-	-- here X is the scheme we're restricting and h is a hyperplane that 
-	-- has already been checked to be 'general'
+	-- here X is the scheme we're restricting and 
+	-- h is a hyperplane (degree 1 element of polynomial ring)
 	N := dim(X.AmbientSpace);
 	-- P := ZZ(monoid[ (i -> getSymbol("w_"|toString(i)) ) \ (0..N-1) ]);
 	-- for some reason above line must be run twice to work ?!?
@@ -555,6 +555,8 @@ multidoc ///
 		Key
 			(segreClass,Ideal,Ideal)
 			(segreClass,Ideal)
+			(segreClass,ProjectiveScheme)
+			(segreClass,ProjectiveScheme,ProjectiveScheme)
 			segreClass
 			[segreClass,Testing]
 			Testing
@@ -563,11 +565,16 @@ multidoc ///
 		Usage
 			segreClass(iX)
 			segreClass(iX,iY)
+			segreClass(X)
+			segreClass(X,Y)
 		Inputs
 			iX:Ideal
 				the ideal defining the projective scheme X
 			iY:Ideal
 				ideal defining a scheme Y containing X
+			-- X:ProjectiveScheme
+			-- Y:ProjectiveScheme
+				projective scheme containing X
 		Outputs
 			:
 				the Segre class of X in PP^N, or the Segre class of X in Y
