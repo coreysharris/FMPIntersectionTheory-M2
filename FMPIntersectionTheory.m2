@@ -11,9 +11,27 @@ newPackage(
 needsPackage("Schubert2")
 
 -- export { "segreClass" }
-export { "ProjectiveScheme", "projectiveScheme", "SuperScheme", "AmbientSpace", "MakeBaseOfLinearSystem", "BaseField",
-		"cycleClass","CycleClass", "CoordinateRing", "Equations", "Hyperplane", "intersectionring",
-		"segreClass", "Testing", "chernMather","chernSchwartzMacPherson", "restrictToHplaneSection", "dualDegree", "polarRanks"}
+export { 
+	"ProjectiveScheme", 
+	"projectiveScheme", 
+	"SuperScheme", 
+	"AmbientSpace", 
+	"MakeBaseOfLinearSystem", 
+	"BaseField",
+	"cycleClass",
+	"CycleClass", 
+	"CoordinateRing", 
+	"Equations", 
+	"Hyperplane", 
+	"intersectionring", 
+	"segreClass", 
+	"Testing", 
+	"chernMather",
+	"chernSchwartzMacPherson", 
+	"restrictToHplaneSection", 
+	"dualDegree", 
+	"polarRanks"
+}
 
 -- protect segreAlgCoefficientMatrix
 
