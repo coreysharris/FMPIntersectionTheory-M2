@@ -171,6 +171,13 @@ dim ProjectiveScheme := X -> (
 	X.dim
 )
 
+codim(ProjectiveScheme) := {} >> opts -> (X) -> (
+	if X.codim === null then (
+		X.codim = dim(X.AmbientSpace) - dim(X)
+	);
+	X.codim
+)
+
 -----------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------
@@ -351,6 +358,11 @@ RingElement ** AbstractSheaf := (s, L) -> (
 
 chernMather = method()
 chernMather(ProjectiveScheme) := (X) -> (
+	if codim(X) > 1 then (
+		<< "Projecting to get lower codimension...   " << "Currently, codim = " << codim(X) << " in PP^" << dim(X.AmbientSpace) << endl;
+		return chernMather( projectToHypersurface(X.Ideal) )
+		);
+	
 	cX := cycleClass X;
 	T := tangentBundle(X.AmbientSpace);
 	O := OO_(X.AmbientSpace);
@@ -650,6 +662,63 @@ multidoc ///
 		Outputs
 			:
 				a ring element
+	------
+	Node
+		Key
+			restrictToHplaneSection
+			(restrictToHplaneSection,ProjectiveScheme,Thing)
+		Headline
+			Restrict an variety to given hyperplane
+		Usage
+			restrictToHplaneSection(X,h)
+		Inputs
+			X:ProjectiveScheme
+			h:
+				a ring element (of degree 1)
+		Outputs
+			:
+				ideal of the restricted variety
+	------
+	Node
+		Key
+			dualDegree
+			(dualDegree,Ideal)
+			(dualDegree,ProjectiveScheme)
+		Headline
+			Get the degree of the dual of an irreducible hyperplane
+		Usage
+			dualDegree(X)
+			dualDegree(I)
+		Inputs
+			X:ProjectiveScheme
+			I:Ideal
+		Outputs
+			:
+				a ring element
+	------
+	Node
+		Key
+			polarRanks
+			(polarRanks,Ideal)
+			(polarRanks,ProjectiveScheme)
+		Headline
+			Computes the polar ranks of a projective variety
+		Usage
+			polarRanks(X)
+			polarRanks(I)
+		Inputs
+			X:ProjectiveScheme
+			I:Ideal
+		Outputs
+			:
+				a ring element
+	------
+	------
+	Node
+		Key
+			BaseField
+		Headline
+			a symbol used internally as a key
 	------
 	Node
 		Key
