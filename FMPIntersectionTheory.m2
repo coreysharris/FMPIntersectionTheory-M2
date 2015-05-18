@@ -385,11 +385,9 @@ chernSchwartzMacPherson(ProjectiveScheme) := (X) -> (
 	cX := cycleClass X;
 	T := tangentBundle(X.AmbientSpace);
 	O := OO_(X.AmbientSpace);
-	-- iJ := (singularLocus X.Ideal).ideal;
-	
-	-- if dim variety iJ < 0 then return chern(T) * cX * (1+cX)^(-1);
-	
-	s := chern(O(cX)) * sub(segreClass(X.Ideal),X.IntersectionRing);
+	iJ := (singularLocus X.Ideal).ideal;
+	seg := segreClass(iJ);
+	s := chern(O(cX)) * sub(seg, X.IntersectionRing);
 	a := sub(adams(-1,s), X.IntersectionRing);
 	
 	return chern(T) * ( cX * (1+cX)^(-1) + (a ** O(cX) ) )
@@ -415,7 +413,8 @@ dualDegree(Ideal) := (X) -> (
 	*}
 	d := degree X;
 	n := #(gens ring X)-1;
-	seg := segreClass(ideal singularLocus X, X);
+	J := ideal singularLocus X;
+	seg := segreClass(J, X);
 	A := ring seg;
 	return d*(d-1)^(n-1) - sum(n, i -> binomial(n-1,i) * (d-1)^i * seg_((A_1)^(n-i)) )
 )
