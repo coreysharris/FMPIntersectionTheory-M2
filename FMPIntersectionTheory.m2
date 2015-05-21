@@ -695,6 +695,11 @@ multidoc ///
 		Usage
 			dualDegree(X)
 			dualDegree(I)
+		Description
+			Example
+				PP2 = QQ[x,y,z];
+				X = ideal "y2z-x3-x2z";
+				dualDegree(X)
 		Inputs
 			X:ProjectiveScheme
 			I:Ideal
