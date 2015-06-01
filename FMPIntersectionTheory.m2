@@ -24,6 +24,7 @@ export {
 	"Equations", 
 	"Hyperplane", 
 	"intersectionring", 
+	"intersectionProduct",
 	"segreClass", 
 	"Testing", 
 	"chernMather",
@@ -440,6 +441,48 @@ polarRanks(ProjectiveScheme) := (X) -> (
 	polarRanks(X.Ideal)
 )
 
+intersectionProduct = method()
+intersectionProduct (ProjectiveScheme, ProjectiveScheme, ProjectiveScheme) := (X,V,Y) -> (
+    {*
+    	computes the intersection product X *_Y V corresponding to a fibre square
+
+    	        j
+	    W -----> V
+	    |        |
+	   g|        |f
+	    |        |
+	    X -----> Y
+	        i
+	
+	where i is a regular embedding of codimension d (see [F,Chapter 6])
+    *}
+    
+    -- this error can be avoided if the user just passes ideals instead of ProjectiveSchemes
+    if not (V.AmbientSpace === Y.AmbientSpace and X.AmbientSpace === Y.AmbientSpace) then
+    	error "expected U,V to be subschemes of Y";
+
+    -- check if codimension in S.AmbientSpace matches number of equations
+    isCompleteIntersection := S -> (
+        #(S.Equations) == codim(S)
+    );	
+
+    H := Y.Hyperplane;
+    -- if X,Y are complete intersections in PP^N, we can compute the intersection product easily
+    if all({X,Y}, S -> isCompleteIntersection S) then (
+        -- compute the normal bundle N_X Y
+	totalchern := S -> (
+	    chernRoots := apply(S.Equations, eq -> first degree eq);
+	    product(apply(chernRoots, ci -> 1+ci*H))
+	);
+	-- something like (totalchern X)/(totalchern Y)
+	-- but of course this doesn't actually work because the
+	-- fraction field is not implemented for QQ[H]
+	-- compute the Segre class s(W,V)
+	s := segreClass(X,V);
+	return (totalchern X, totalchern Y, s)
+    );
+    error "not implemented yet"
+)
 
 -----------------------------------------------------------------------------
 
@@ -773,14 +816,47 @@ load (FMPIntersectionTheory#"source directory"|"FMPIntersectionTheory/segreClass
 
 
 
+end
+
+restart
+uninstallPackage "FMPIntersectionTheory"
+installPackage "FMPIntersectionTheory"
+debug needsPackage "FMPIntersectionTheory"
+
+PP3 = QQ[x,y,z,t]
+C = ideal "x3-xy2-xz2+2yzt-xt2"
+J = ideal singularLocus C
+segreClass(J,C)
+segreClass(J)
+-- chernSchwartzMacPherson(C)
+chernMather(C)
+polarRanks(C)
+
+PP5 = QQ[a,b,c,d,e,f]
+G = ideal "ab-cd+ef"
+S1 = G + ideal b
+S21 = G + ideal (b,c,d,e)
+s = segreClass(S21,S1)
+
+h = (ring oo)_1
+h
+(1 + h)*s
+
+V = G + ideal "b2-cf"
+segreClass(S1,V)
+
+U = G + ideal (b,d,f)
+segreClass(U,V)
 
 
-
-
-
-
-
-
-
-
-
+PP5 = QQ[a,b,c,d,e,f]
+G = ideal "ab-cd+ef"
+GS = projectiveScheme(G)
+V = G + ideal "b2-cf"
+VS = projectiveScheme(V, SuperScheme=>GS)
+U = G + ideal (b,d,f)
+XS = projectiveScheme(U, SuperScheme=>GS)
+intersectionProduct(XS,VS,GS)
+(a,b,c) = oo
+ring a == ring c
+ring a === ring c
