@@ -484,20 +484,24 @@ intersectionProduct (ProjectiveScheme, ProjectiveScheme, ProjectiveScheme) := (X
 
     H := Y.Hyperplane;
     -- if X,Y are complete intersections in PP^N, we can compute the intersection product easily
-    if all({X,Y}, S -> isCompleteIntersection S) then (
+    (a,b,c) := if all({X,Y}, S -> isCompleteIntersection S) then (
         -- compute the normal bundle N_X Y
-	totalchern := S -> (
-	    chernRoots := apply(S.Equations, eq -> first degree eq);
-	    product(apply(chernRoots, ci -> 1+ci*H))
-	);
+	chernRoots := S -> apply(S.Equations, eq -> (first degree eq)*H);
+	getInverse := E -> sum toList apply(0..(# gens ring E), i -> ((-1)*E)^i);
+	chernX := product apply(chernRoots X, a -> 1+a);
+	chernY := product apply(chernRoots Y, a -> getInverse a);
 	-- something like (totalchern X)/(totalchern Y)
-	-- but of course this doesn't actually work because the
-	-- fraction field is not implemented for QQ[H]
+	-- but of course this doesn't actually work
+	
 	-- compute the Segre class s(W,V)
 	s := segreClass(X,V);
-	return (totalchern X, totalchern Y, s)
-    );
-    error "not implemented yet"
+	(chernX, chernY, s)
+    ) else error "not implemented yet";
+    
+    -- {a*b*c}_d is the class we want
+    d := dim V - (dim Y - dim X);
+    n := dim Y.AmbientSpace;
+    coefficient(H^(n-d),a*b*c)*H^(n-d)
 )
 
 -----------------------------------------------------------------------------
