@@ -277,15 +277,30 @@ restrictToHplaneSection(ProjectiveScheme, Thing) := (X,h) -> (
 	return restrictedIdeal
 )
 
-
+-- TODO : segreClass should take ProjectiveSchemes as the default type
+-- converting to ideals and back ruins the intersectionRings (gives !===)
 segreClass = method(TypicalValue => RingElement, Options => {Testing => false, Strategy => "Saturate"})
 segreClass(Ideal) := opts -> (iX) -> (
 	iY := trim ideal 0_(ring iX);
-	return segreClass(iX,iY, opts)
+	segreClass(iX, iY, opts)
 )
 segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
-	Y := projectiveScheme(iY);
-	X := projectiveScheme( iX, SuperScheme => Y, MakeBaseOfLinearSystem => true );
+    	Y := projectiveScheme(iY);
+	X := projectiveScheme(iX, SuperScheme => Y, MakeBaseOfLinearSystem => true);
+    	segreClass(X, Y, opts)
+)
+segreClass(ProjectiveScheme) := opts -> (X) -> (
+    	-- to compute s(X,PP^N) given X
+	-- need to get intersectionring of X or change it to that of PP^N
+	iX := X.Ideal;
+	iY := trim ideal 0_(ring iX);
+	Y := projectiveScheme(iY, AmbientSpace => X.AmbientSpace);
+	segreClass(X, Y, opts)
+)
+segreClass(ProjectiveScheme,ProjectiveScheme) := opts -> (X,Y) -> (
+    	if not ( X.AmbientSpace === Y.AmbientSpace ) then (
+		error "Expected ProjectiveSchemes with the same AmbientSpace"
+	);
 	H := X.Hyperplane;
 	if dim X < 0 then (return 0*H);
 	N := dim X;
@@ -338,14 +353,14 @@ segreClass(Ideal,Ideal) := opts -> (iX,iY) -> (
 		));
 
 	if opts.Testing then (return seg);
-	return sub(seg,X0.IntersectionRing)
+	sub(seg,intersectionRing Y0)
 )
-segreClass(ProjectiveScheme,ProjectiveScheme) := opts -> (X,Y) -> (
-	return segreClass(X.Ideal, Y.Ideal, opts);
-)
-segreClass(ProjectiveScheme) := opts -> (X) -> (
-	return segreClass(X.Ideal, opts);
-)
+--segreClass(ProjectiveScheme,ProjectiveScheme) := opts -> (X,Y) -> (
+	--return segreClass(X.Ideal, Y.Ideal, opts);
+--)
+--segreClass(ProjectiveScheme) := opts -> (X) -> (
+	--return segreClass(X.Ideal, opts);
+--)
 
 RingElement ** AbstractSheaf := (s, L) -> (
 	c := chern L;
@@ -821,7 +836,7 @@ end
 
 restart
 uninstallPackage "FMPIntersectionTheory"
-installPackage "FMPIntersectionTheory"
+--installPackage "FMPIntersectionTheory"
 debug needsPackage "FMPIntersectionTheory"
 
 PP3 = QQ[x,y,z,t]
