@@ -34,7 +34,6 @@ export {
 	"polarRanks"
 }
 
--- protect segreAlgCoefficientMatrix
 
 hasAttribute = value Core#"private dictionary"#"hasAttribute"
 getAttribute = value Core#"private dictionary"#"getAttribute"
@@ -123,7 +122,8 @@ projectiveScheme Ideal :=  opts -> I -> (
 		global CoordinateRing => quotient I,
 		global Equations => eqs,
 		global AmbientSpace => P,
-		global IntersectionRing => intersectionRing(P),
+		--global IntersectionRing => P.IntersectionRing,
+		--global IntersectionRing => intersectionRing(P),
 		global Hyperplane => ( chern_1 (OO_P(1)) ), -- the class of a hyperplane in ambientSpace
 		global dim => null,
 		global degree => null,
@@ -133,8 +133,8 @@ projectiveScheme Ideal :=  opts -> I -> (
 )
 
 intersectionring = method()
-intersectionring ProjectiveScheme := X -> (
-	return X.IntersectionRing
+intersectionRing ProjectiveScheme := X -> (
+	return intersectionRing(X.AmbientSpace)
 )
 
 
@@ -372,7 +372,8 @@ chernMather(ProjectiveScheme) := (X) -> (
 	if dim variety iJ < 0 then return chern(T) * cX * (1+cX)^(-1);
 	
 	s := segreClass(iJ,X.Ideal);
-	a := sub(adams(-1,s), X.IntersectionRing);
+	a := sub(adams(-1,s), intersectionRing X);
+	
 	
 	return chern(T) * ( cX * (1+cX)^(-1) + (a ** O(cX) ) )
 )
@@ -388,8 +389,8 @@ chernSchwartzMacPherson(ProjectiveScheme) := (X) -> (
 	O := OO_(X.AmbientSpace);
 	iJ := (singularLocus X.Ideal).ideal;
 	seg := segreClass(iJ);
-	s := chern(O(cX)) * sub(seg, X.IntersectionRing);
-	a := sub(adams(-1,s), X.IntersectionRing);
+	s := chern(O(cX)) * sub(seg, intersectionRing X);
+	a := sub(adams(-1,s), intersectionRing X);
 	
 	return chern(T) * ( cX * (1+cX)^(-1) + (a ** O(cX) ) )
 )
@@ -850,13 +851,7 @@ segreClass(U,V)
 
 
 PP5 = QQ[a,b,c,d,e,f]
-G = ideal "ab-cd+ef"
-GS = projectiveScheme(G)
-V = G + ideal "b2-cf"
-VS = projectiveScheme(V, SuperScheme=>GS)
-U = G + ideal (b,d,f)
-XS = projectiveScheme(U, SuperScheme=>GS)
+G = ideal "ab-cd+ef"; GS = projectiveScheme(G)
+V = G + ideal "b2-cf"; VS = projectiveScheme(V, SuperScheme=>GS)
+U = G + ideal (b,d,f); XS = projectiveScheme(U, SuperScheme=>GS)
 intersectionProduct(XS,VS,GS)
-(a,b,c) = oo
-ring a == ring c
-ring a === ring c
