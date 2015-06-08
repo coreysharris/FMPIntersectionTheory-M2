@@ -122,8 +122,6 @@ projectiveScheme Ideal :=  opts -> I -> (
 		global CoordinateRing => quotient I,
 		global Equations => eqs,
 		global AmbientSpace => P,
-		--global IntersectionRing => P.IntersectionRing,
-		--global IntersectionRing => intersectionRing(P),
 		global Hyperplane => ( chern_1 (OO_P(1)) ), -- the class of a hyperplane in ambientSpace
 		global dim => null,
 		global degree => null,
@@ -132,7 +130,7 @@ projectiveScheme Ideal :=  opts -> I -> (
 	}
 )
 
-intersectionring = method()
+--intersectionring = method()
 intersectionRing ProjectiveScheme := X -> (
 	return intersectionRing(X.AmbientSpace)
 )
@@ -824,6 +822,7 @@ assert ( class(X) === ProjectiveScheme )
 assert ( cycleClass(X) === X.Hyperplane ) -- X is rationally equivalent to a line in PP^2
 assert ( degree(X) == 1 ) -- [line + pt] . [H] = [pt]
 assert ( dim(X) == 1 )
+assert ( codim(X) == 1 )
 
 assert ( cycleClass(X') === (X'.Hyperplane)^2 ) -- [X'] = [X'_red] = [pt]
 assert ( degree(X') == 2 ) -- double point has degree 2
