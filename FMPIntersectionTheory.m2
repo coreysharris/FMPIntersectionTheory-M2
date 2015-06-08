@@ -12,26 +12,26 @@ needsPackage("Schubert2")
 
 -- export { "segreClass" }
 export { 
-	"ProjectiveScheme", 
+        "chernMather",
+        "chernSchwartzMacPherson", 
+        "cycleClass",
+        "dualDegree", 
+        "intersectionProduct",
+        --"intersectionring", 
+        "polarRanks",
 	"projectiveScheme", 
-	"SuperScheme", 
+        --"restrictToHplaneSection", 
+        "segreClass", 
 	"AmbientSpace", 
-	"MakeBaseOfLinearSystem", 
 	"BaseField",
-	"cycleClass",
-	"CycleClass", 
 	"CoordinateRing", 
+        "CycleClass", 
 	"Equations", 
 	"Hyperplane", 
-	"intersectionring", 
-	"intersectionProduct",
-	"segreClass", 
-	"Testing", 
-	"chernMather",
-	"chernSchwartzMacPherson", 
-	"restrictToHplaneSection", 
-	"dualDegree", 
-	"polarRanks"
+        "MakeBaseOfLinearSystem", 
+        "ProjectiveScheme", 
+        "SuperScheme", 
+        "Testing"
 }
 
 
