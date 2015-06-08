@@ -400,11 +400,23 @@ chernSchwartzMacPherson(ProjectiveScheme) := (X) -> (
 	cX := cycleClass X;
 	T := tangentBundle(X.AmbientSpace);
 	O := OO_(X.AmbientSpace);
+
 	iJ := (singularLocus X.Ideal).ideal;
-	seg := segreClass(iJ);
+        if dim variety iJ < 0 then return chern(T) * cX * (1+cX)^(-1);
+
+        iM := if codim X > 1 then (
+                ideal ( for i from 1 to codim X - 1 list sum apply(X.Equations, e -> random(0,ring e)*e) )
+            ) else if codim X == 1 then (
+                trim ideal 0_(ring X.Ideal)
+            ) else if codim X == 0 then (
+                return chern tangentBundle X.AmbientSpace
+            ) else error "got codimension of " | toString codim X | " for " toString X;
+        M := projectiveScheme(iM, AmbientSpace => X.AmbientSpace);
+
+        J := projectiveScheme(iJ, AmbientSpace => X.AmbientSpace);
+        seg := segreClass(J,M);
 	s := chern(O(cX)) * sub(seg, intersectionRing X);
 	a := sub(adams(-1,s), intersectionRing X);
-	
 	return chern(T) * ( cX * (1+cX)^(-1) + (a ** O(cX) ) )
 )
 chernSchwartzMacPherson(Ideal) := (iX) -> (
@@ -485,9 +497,11 @@ intersectionProduct (ProjectiveScheme, ProjectiveScheme, ProjectiveScheme) := (X
     (a,b,c) := if all({X,Y}, S -> isCompleteIntersection S) then (
         -- compute the normal bundle N_X Y
 	chernRoots := S -> apply(S.Equations, eq -> (first degree eq)*H);
-	getInverse := E -> sum toList apply(0..(# gens ring E), i -> ((-1)*E)^i);
+        --getInverse := E -> sum toList apply(0..(# gens ring E), i -> ((-1)*E)^i);
 	chernX := product apply(chernRoots X, a -> 1+a);
-	chernY := product apply(chernRoots Y, a -> getInverse a);
+        --chernY := product apply(chernRoots Y, a -> getInverse a);
+        chernY := product apply(chernRoots Y, a -> (1+a)^(-1));
+
 	-- something like (totalchern X)/(totalchern Y)
 	-- but of course this doesn't actually work
 	
@@ -524,46 +538,35 @@ assert ( degree(X') == 2 ) -- double point has degree 2
 
 load (FMPIntersectionTheory#"source directory"|"FMPIntersectionTheory/segreClass-tests2.m2")
 
--- TEST /// input (FMPIntersectionTheory#"source directory"|"FMPIntersectionTheory/segreClass-tests.m2") ///
-
-
-
-
 end
 
 restart
 uninstallPackage "FMPIntersectionTheory"
---installPackage "FMPIntersectionTheory"
-debug needsPackage "FMPIntersectionTheory"
-
-PP3 = QQ[x,y,z,t]
-C = ideal "x3-xy2-xz2+2yzt-xt2"
-J = ideal singularLocus C
-segreClass(J,C)
-segreClass(J)
--- chernSchwartzMacPherson(C)
-chernMather(C)
-polarRanks(C)
-
-PP5 = QQ[a,b,c,d,e,f]
-G = ideal "ab-cd+ef"
-S1 = G + ideal b
-S21 = G + ideal (b,c,d,e)
-s = segreClass(S21,S1)
-
-h = (ring oo)_1
-h
-(1 + h)*s
-
-V = G + ideal "b2-cf"
-segreClass(S1,V)
-
-U = G + ideal (b,d,f)
-segreClass(U,V)
-
+--load "FMPIntersectionTheory.m2"
+installPackage "FMPIntersectionTheory"
+--needsPackage "FMPIntersectionTheory"
+--debug needsPackage "FMPIntersectionTheory"
 
 PP5 = QQ[a,b,c,d,e,f]
 G = ideal "ab-cd+ef"; GS = projectiveScheme(G)
 V = G + ideal "b2-cf"; VS = projectiveScheme(V, SuperScheme=>GS)
 U = G + ideal (b,d,f); XS = projectiveScheme(U, SuperScheme=>GS)
 intersectionProduct(XS,VS,GS)
+
+chernSchwartzMacPherson(ideal 0_PP5)
+chernSchwartzMacPherson(G)
+chernSchwartzMacPherson(U)
+
+S1 = G + ideal b
+S21 = G + ideal (b,c,d,e)
+s = segreClass(S21,S1)
+
+PP3 = QQ[x,y,z,t]
+C = ideal "x3-xy2-xz2+2yzt-xt2"
+J = ideal singularLocus C
+segreClass(C)
+segreClass(J,C)
+segreClass(J)
+-- chernSchwartzMacPherson(C)
+chernMather(C)
+polarRanks(C)
