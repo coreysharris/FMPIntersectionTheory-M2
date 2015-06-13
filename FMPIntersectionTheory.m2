@@ -497,9 +497,7 @@ intersectionProduct (ProjectiveScheme, ProjectiveScheme, ProjectiveScheme) := (X
     (a,b,c) := if all({X,Y}, S -> isCompleteIntersection S) then (
         -- compute the normal bundle N_X Y
         chernRoots := S -> apply(S.Equations, eq -> (first degree eq)*H);
-        --getInverse := E -> sum toList apply(0..(# gens ring E), i -> ((-1)*E)^i);
         chernX := product apply(chernRoots X, a -> 1+a);
-        --chernY := product apply(chernRoots Y, a -> getInverse a);
         chernY := product apply(chernRoots Y, a -> (1+a)^(-1));
 
         -- something like (totalchern X)/(totalchern Y)
