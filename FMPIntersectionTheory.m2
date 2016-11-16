@@ -209,7 +209,7 @@ goodHyperplaneSection := (X,Y) -> (
 -- 
 projDegSaturate := (X,Y) -> (
     
-    -- << "calculating degpr(X,Y)" << endl;
+    << "calculating degpr(X,Y)" << endl;
     
     ideals := for i from 1 to (dim Y)
         list ( 
@@ -221,9 +221,15 @@ projDegSaturate := (X,Y) -> (
     --<< " to get " << saturate(Y.Ideal + hyps, X.Ideal) << " with degree " << degree saturate(Y.Ideal + hyps, X.Ideal) << endl;
     
     if char(X.BaseField) > 0 then (
-        return degree saturate( Y.Ideal + hyps, X.Ideal, Strategy => "F4")
+        -- << ">0  saturating " << trim(Y.Ideal + hyps) << " with respect to " << X.Ideal << endl;
+        I := saturate( Y.Ideal + hyps, X.Ideal, Strategy => "F4");
+        -- << " result : " << I << endl;
+        return degree I
     ) else (
-        return degree saturate( Y.Ideal + hyps, X.Ideal)
+        -- << "0:  saturating " << trim(Y.Ideal + hyps) << " with respect to " << X.Ideal << endl;
+        I := saturate( Y.Ideal + hyps, X.Ideal);
+        -- << " result : " << I << endl;
+        return degree I
     )
     -- return degree quotient( Y.Ideal + hyps, X.Ideal )
 )
@@ -310,20 +316,29 @@ segreClass(ProjectiveScheme,ProjectiveScheme) := opts -> (X,Y) -> (
 
         eqns := while ( dim X >= 0 )
                 list (
+                        -- << " 1 " << endl;
                         pdeg := if opts.Strategy == "Helmer" then (
                                         projDegHelmer(X,Y)
-                                ) else if opts.Strategy == "Saturate" then (
+                                -- ) else if opts.Strategy == "Saturate" then (
+                                ) else (
                                         projDegSaturate(X,Y)
                                 );
+                        -- << " 2 " << endl;
                         D := ( d^(dim Y) * degree(Y) ) - pdeg;
+                        -- << " 3 " << endl;
                         -- if opts.Testing then (<< "D = ( d^(dim Y) * degree(Y) ) - projDeg(X.Ideal,Y.Ideal) = " << d << "^" << dim Y << " * " << degree(Y) << " - " << projDeg(X.Ideal,Y.Ideal) << endl; );
                         D
                 )
-                do (
-                        hyp := goodHyperplaneSection(X,Y);
+                do (    
+                        -- << " 4 " << endl;
+                        -- this line is causing a huge bottleneck
+                        -- hyp := goodHyperplaneSection(X,Y);
+                        hyp := random(1, ring(Y.Ideal));
                         -- replace X,Y with hyperplane sections
+                        -- << " 5 " << endl;
                         IY := restrictToHplaneSection(Y,hyp);
                         IX := sub(restrictToHplaneSection(X,hyp), ring(IY));
+                        -- << " 6 " << endl;
                         Y = projectiveScheme IY;
                         X = projectiveScheme(IX, SuperScheme => Y, MakeBaseOfLinearSystem => true);
                 );
@@ -377,6 +392,7 @@ chernMather(ProjectiveScheme) := (X) -> (
                 return chernMather( projectToHypersurface(X.Ideal) )
                 );
         
+        if codim(X) == 1 then (<< "X has codimension 1..." << endl;);
         cX := cycleClass X;
         T := tangentBundle(X.AmbientSpace);
         O := OO_(X.AmbientSpace);
@@ -384,9 +400,10 @@ chernMather(ProjectiveScheme) := (X) -> (
         
         if dim variety iJ < 0 then return chern(T) * cX * (1+cX)^(-1);
         
+        -- this line can potentially produce a LOT of output 
+        -- << "Computing Segre class of " << toString(iJ) << " in " << toString(X.Ideal) << endl;
         s := segreClass(iJ,X.Ideal);
         a := sub(adams(-1,s), intersectionRing X);
-        
         
         return chern(T) * ( cX * (1+cX)^(-1) + (a ** O(cX) ) )
 )
@@ -402,21 +419,29 @@ chernSchwartzMacPherson(ProjectiveScheme) := (X) -> (
         O := OO_(X.AmbientSpace);
 
         iJ := (singularLocus X.Ideal).ideal;
-        if dim variety iJ < 0 then return chern(T) * cX * (1+cX)^(-1);
 
         iM := if codim X > 1 then (
+            -- << 1 << endl;
+            << "This function is meant for hypersurfaces... Trying to find a smooth ambient variety... output cannot be trusted" << endl;
                 ideal ( for i from 1 to codim X - 1 list sum apply(X.Equations, e -> random(0,ring e)*e) )
             ) else if codim X == 1 then (
+            -- << 2 << endl;
+                if dim variety iJ < 0 then return chern(T) * cX * (1+cX)^(-1);
                 trim ideal 0_(ring X.Ideal)
             ) else if codim X == 0 then (
+            -- << 3 << endl;
                 return chern tangentBundle X.AmbientSpace
             ) else error "got codimension of " | toString codim X | " for " toString X;
         M := projectiveScheme(iM, AmbientSpace => X.AmbientSpace);
 
         J := projectiveScheme(iJ, AmbientSpace => X.AmbientSpace);
+        -- << "pre seg" << endl;
         seg := segreClass(J,M);
+        -- << "post seg" << endl;
         s := chern(O(cX)) * sub(seg, intersectionRing X);
+        -- << 5 << endl;
         a := sub(adams(-1,s), intersectionRing X);
+        -- << 6 << endl;
         return chern(T) * ( cX * (1+cX)^(-1) + (a ** O(cX) ) )
 )
 chernSchwartzMacPherson(Ideal) := (iX) -> (
@@ -426,17 +451,18 @@ chernSchwartzMacPherson(Ideal) := (iX) -> (
 projectToHypersurface = method()
 projectToHypersurface(Ideal) := (X) -> (
         c := codim X;
+        n := dim variety X;
         R := ring X;
         kk := coefficientRing R;
-        L := sum( c+1, i -> ideal(random(1,R)) );
-        pr := map(R,kk(monoid[(i -> (getSymbol "a")_i ) \ (0..c)]), gens L );
-        return preimage_pr X
+        L := sum( n+2, i -> ideal(random(1,R)) );
+        pr := map(R,kk(monoid[(i -> (getSymbol "a")_i ) \ (1..n+2)]), gens L );
+        return trim (preimage_pr X)
 )
 
 dualDegree = method()
 dualDegree(Ideal) := (X) -> (
         {*
-                Compute the degree of the dual of a hypersurface
+                Compute the degree of the dual of a hypersurface via its singularity Segre class
         *}
         d := degree X;
         n := #(gens ring X)-1;
@@ -453,7 +479,8 @@ polarRanks = method()
 polarRanks(Ideal) := (X') -> (
         X := if codim X' > 1 then (
                 projectToHypersurface X'
-        ) else X';
+        ) else if codim X' == 1 then (X')
+        else error "X should be a proper subvariety";
         d := degree X;
         n := dim variety X;
         seg := segreClass(ideal singularLocus X, X);
@@ -540,16 +567,28 @@ end
 
 restart
 uninstallPackage "FMPIntersectionTheory"
---load "FMPIntersectionTheory.m2"
-installPackage "FMPIntersectionTheory"
+load "FMPIntersectionTheory.m2"
+--installPackage "FMPIntersectionTheory"
 --needsPackage "FMPIntersectionTheory"
---debug needsPackage "FMPIntersectionTheory"
+debug needsPackage "FMPIntersectionTheory"
+
+restart
+load "CSM.m2"
 
 PP5 = QQ[a,b,c,d,e,f]
-G = ideal "ab-cd+ef"; GS = projectiveScheme(G)
-V = G + ideal "b2-cf"; VS = projectiveScheme(V, SuperScheme=>GS)
-U = G + ideal (b,d,f); XS = projectiveScheme(U, SuperScheme=>GS)
-intersectionProduct(XS,VS,GS)
+G = ideal "ab-cd+ef";
+S = G + ideal "b2-de";
+J = (singularLocus(S)).ideal
+seg = segreClass(J,G)
+
+CSM S
+
+V = G + ideal "b2-cf";
+U = G + ideal (b,d,f);
+-- G = ideal "ab-cd+ef"; GS = projectiveScheme(G)
+-- V = G + ideal "b2-cf"; VS = projectiveScheme(V, SuperScheme=>GS)
+-- U = G + ideal (b,d,f); XS = projectiveScheme(U, SuperScheme=>GS)
+--intersectionProduct(XS,VS,GS)
 
 chernSchwartzMacPherson(ideal 0_PP5)
 chernSchwartzMacPherson(G)
@@ -568,3 +607,7 @@ segreClass(J)
 -- chernSchwartzMacPherson(C)
 chernMather(C)
 polarRanks(C)
+
+
+
+
