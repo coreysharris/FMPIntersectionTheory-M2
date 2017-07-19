@@ -19,6 +19,7 @@ export {
         "intersectionProduct",
         --"intersectionring", 
         "polarRanks",
+        "sumPolarRanks",
         "projectiveScheme", 
         --"restrictToHplaneSection", 
         "segreClass", 
@@ -227,9 +228,9 @@ projDegSaturate := (X,Y) -> (
         return degree I
     ) else (
         -- << "0:  saturating " << trim(Y.Ideal + hyps) << " with respect to " << X.Ideal << endl;
-        I := saturate( Y.Ideal + hyps, X.Ideal);
+        I' := saturate( Y.Ideal + hyps, X.Ideal);
         -- << " result : " << I << endl;
-        return degree I
+        return degree I'
     )
     -- return degree quotient( Y.Ideal + hyps, X.Ideal )
 )
@@ -414,35 +415,32 @@ chernMather(Ideal) := (iX) -> (
 
 chernSchwartzMacPherson = method()
 chernSchwartzMacPherson(ProjectiveScheme) := (X) -> (
-        cX := cycleClass X;
-        T := tangentBundle(X.AmbientSpace);
-        O := OO_(X.AmbientSpace);
+        error "This command is not implemented"
+        -- cX := cycleClass X;
+        -- T := tangentBundle(X.AmbientSpace);
+        -- O := OO_(X.AmbientSpace);
 
-        iJ := (singularLocus X.Ideal).ideal;
+        -- iJ := (singularLocus X.Ideal).ideal;
 
-        iM := if codim X > 1 then (
-            -- << 1 << endl;
-            << "This function is meant for hypersurfaces... Trying to find a smooth ambient variety... output cannot be trusted" << endl;
-                ideal ( for i from 1 to codim X - 1 list sum apply(X.Equations, e -> random(0,ring e)*e) )
-            ) else if codim X == 1 then (
-            -- << 2 << endl;
-                if dim variety iJ < 0 then return chern(T) * cX * (1+cX)^(-1);
-                trim ideal 0_(ring X.Ideal)
-            ) else if codim X == 0 then (
-            -- << 3 << endl;
-                return chern tangentBundle X.AmbientSpace
-            ) else error "got codimension of " | toString codim X | " for " toString X;
-        M := projectiveScheme(iM, AmbientSpace => X.AmbientSpace);
+        -- iM := if codim X > 1 then (
+        --     << "This function is meant for hypersurfaces... Trying to find a smooth ambient variety... output cannot be trusted" << endl;
+        --         ideal ( for i from 1 to codim X - 1 list sum apply(X.Equations, e -> random(0,ring e)*e) )
+        --     ) else if codim X == 1 then (
+        --         if dim variety iJ < 0 then return chern(T) * cX * (1+cX)^(-1);
+        --         trim ideal 0_(ring X.Ideal)
+        --     ) else if codim X == 0 then (
+        --         return chern tangentBundle X.AmbientSpace
+        --     ) else error "got codimension of " | toString codim X | " for " toString X;
+        -- M := projectiveScheme(iM, AmbientSpace => X.AmbientSpace);
+        -- << "M : " << peek M << endl;
+        
 
-        J := projectiveScheme(iJ, AmbientSpace => X.AmbientSpace);
-        -- << "pre seg" << endl;
-        seg := segreClass(J,M);
-        -- << "post seg" << endl;
-        s := chern(O(cX)) * sub(seg, intersectionRing X);
-        -- << 5 << endl;
-        a := sub(adams(-1,s), intersectionRing X);
-        -- << 6 << endl;
-        return chern(T) * ( cX * (1+cX)^(-1) + (a ** O(cX) ) )
+        -- J := projectiveScheme(iJ, AmbientSpace => X.AmbientSpace);
+        -- -- seg := segreClass(J,M);
+        -- seg := segreClass(J.Ideal, M.Ideal);
+        -- s := chern(O(cX)) * sub(seg, intersectionRing X);
+        -- a := sub(adams(-1,s), intersectionRing X);
+        -- return chern(T) * ( cX * (1+cX)^(-1) + (a ** O(cX) ) )
 )
 chernSchwartzMacPherson(Ideal) := (iX) -> (
         return chernSchwartzMacPherson(projectiveScheme(iX))
@@ -475,8 +473,22 @@ dualDegree(ProjectiveScheme) := (X) -> (
         dualDegree(X.Ideal)
 )
 
+sumPolarRanks = method()
+sumPolarRanks(Ideal) := (X) -> (
+        n := dim variety X;
+        cm := chernMather X;
+        A := ring cm;
+        h := A_1;
+        return sum(n+1, i -> (-1)^(n+i)*(2^(i+1)-1)*cm_(h^(n+1-i)))
+)
+sumPolarRanks(ProjectiveScheme) := (X) -> (
+        polarRanks(X.Ideal)
+)
+
+-- this method is broken
 polarRanks = method()
 polarRanks(Ideal) := (X') -> (
+        << "BROKEN.  Do not trust output." << endl;
         X := if codim X' > 1 then (
                 projectToHypersurface X'
         ) else if codim X' == 1 then (X')
@@ -568,7 +580,7 @@ end
 restart
 uninstallPackage "FMPIntersectionTheory"
 load "FMPIntersectionTheory.m2"
---installPackage "FMPIntersectionTheory"
+installPackage "FMPIntersectionTheory"
 --needsPackage "FMPIntersectionTheory"
 debug needsPackage "FMPIntersectionTheory"
 
