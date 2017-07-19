@@ -210,7 +210,7 @@ goodHyperplaneSection := (X,Y) -> (
 -- 
 projDegSaturate := (X,Y) -> (
     
-    << "calculating degpr(X,Y)" << endl;
+    -- << "calculating degpr(X,Y)" << endl;
     
     ideals := for i from 1 to (dim Y)
         list ( 
@@ -376,6 +376,11 @@ segreClass(ProjectiveScheme,ProjectiveScheme) := opts -> (X,Y) -> (
         --return segreClass(X.Ideal, opts);
 --)
 
+dualChernClass = c -> (
+    -- c is a total chern class in projective space
+
+    )
+
 RingElement ** AbstractSheaf := (s, L) -> (
         c := chern L;
         R := ring s;
@@ -388,12 +393,13 @@ RingElement ** AbstractSheaf := (s, L) -> (
 
 chernMather = method()
 chernMather(ProjectiveScheme) := (X) -> (
+        if dim X < 0 then return 0*X.Hyperplane;
         if codim(X) > 1 then (
-                << "Projecting to get lower codimension...   " << "Currently, codim = " << codim(X) << " in PP^" << dim(X.AmbientSpace) << endl;
+                -- << "Projecting to get lower codimension...   " << "Currently, codim = " << codim(X) << " in PP^" << dim(X.AmbientSpace) << endl;
                 return chernMather( projectToHypersurface(X.Ideal) )
                 );
         
-        if codim(X) == 1 then (<< "X has codimension 1..." << endl;);
+        -- if codim(X) == 1 then (<< "X has codimension 1..." << endl;);
         cX := cycleClass X;
         T := tangentBundle(X.AmbientSpace);
         O := OO_(X.AmbientSpace);
