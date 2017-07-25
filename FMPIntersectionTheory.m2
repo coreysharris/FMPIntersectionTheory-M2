@@ -485,10 +485,11 @@ dualDegree(ProjectiveScheme) := (X) -> (
 sumPolarRanks = method()
 sumPolarRanks(Ideal) := (X) -> (
         n := dim variety X;
+        N := numgens ring X - 1;
         cm := chernMather X;
         A := ring cm;
         h := A_1;
-        return sum(n+1, i -> (-1)^(n+i)*(2^(i+1)-1)*cm_(h^(n+1-i)))
+        return sum(n+1, i -> (-1)^(n+i)*(2^(i+1)-1)*cm_(h^(N-i)))
 )
 sumPolarRanks(ProjectiveScheme) := (X) -> (
         polarRanks(X.Ideal)
