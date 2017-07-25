@@ -396,7 +396,9 @@ chernMather(ProjectiveScheme) := (X) -> (
         if dim X < 0 then return 0*X.Hyperplane;
         if codim(X) > 1 then (
                 -- << "Projecting to get lower codimension...   " << "Currently, codim = " << codim(X) << " in PP^" << dim(X.AmbientSpace) << endl;
-                return chernMather( projectToHypersurface(X.Ideal) )
+                -- return chernMather( projectToHypersurface(X.Ideal) )
+                cMa := chernMather( projectToHypersurface(X.Ideal) );
+                return sub(cMa, intersectionRing X) * (X.Hyperplane^(codim X - 1))
                 );
         
         -- if codim(X) == 1 then (<< "X has codimension 1..." << endl;);
@@ -409,13 +411,14 @@ chernMather(ProjectiveScheme) := (X) -> (
         
         -- this line can potentially produce a LOT of output 
         -- << "Computing Segre class of " << toString(iJ) << " in " << toString(X.Ideal) << endl;
+        << "Computing Segre class..." << endl;
         s := segreClass(iJ,X.Ideal);
         a := sub(adams(-1,s), intersectionRing X);
         
         return chern(T) * ( cX * (1+cX)^(-1) + (a ** O(cX) ) )
 )
 chernMather(Ideal) := (iX) -> (
-        X := projectiveScheme(iX);
+        X := projectiveScheme(radical iX);
         return chernMather(X)
 )
 
